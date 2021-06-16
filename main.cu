@@ -11,8 +11,9 @@ using namespace std;
 
 
 
+#define REPEAT 1
+
 void runPagerankBatch(const string& data, bool show, int skip, int batch) {
-  int repeat = 5;
   vector<float>  ranksAdj;
   vector<float> *initStatic  = nullptr;
   vector<float> *initDynamic = &ranksAdj;
@@ -37,18 +38,18 @@ void runPagerankBatch(const string& data, bool show, int skip, int batch) {
     ranksAdj.resize(y.span());
 
     // Find static pagerank using standard algorithm.
-    auto a2 = pagerankMonolithic(yt, initStatic, {repeat});
+    auto a2 = pagerankMonolithic(yt, initStatic, {REPEAT});
     auto e2 = l1Norm(a2.ranks, a2.ranks);
     print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [static]\n", a2.time, a2.iterations, e2);
 
     // Find static pagerank using levelwise algorithm.
-    auto a3 = pagerankLevelwise(y, yt, initStatic, {repeat});
+    auto a3 = pagerankLevelwise(y, yt, initStatic, {REPEAT});
     auto e3 = l1Norm(a3.ranks, a2.ranks);
     print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [static]\n", a3.time, a3.iterations, e3);
 
     // Find dynamic pagerank using levelwise algorithm, with skip-comp and scaled-fill.
     adjustRanks(ranksAdj, ranksOld, ksOld, ks, 0.0f, float(ksOld.size())/ks.size(), 1.0f/ks.size());
-    auto a4 = pagerankLevelwise(x, xt, y, yt, initDynamic, {repeat});
+    auto a4 = pagerankLevelwise(x, xt, y, yt, initDynamic, {REPEAT});
     auto e4 = l1Norm(a4.ranks, a2.ranks);
     print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [dynamic]\n", a4.time, a4.iterations, e4);
     x = move(y);
@@ -59,7 +60,7 @@ void runPagerankBatch(const string& data, bool show, int skip, int batch) {
 void runPagerank(const string& data, bool show) {
   int M = countLines(data), steps = 100;
   printf("Temporal edges: %d\n", M);
-  for (int batch=1, i=0; batch<M; batch*=i&1? 2:5, i++) {
+  for (int batch=100, i=0; batch<M; batch*=i&1? 2:5, i++) {
     int skip = max(M/steps - batch, 0);
     printf("\n# Batch size %.0e\n", (double) batch);
     runPagerankBatch(data, show, skip, batch);
