@@ -15,3 +15,4 @@
 #include "pagerank.hxx"
 #include "pagerankMonolithic.hxx"
 #include "pagerankLevelwise.hxx"
+#include "pagerankNvgraph.hxx"

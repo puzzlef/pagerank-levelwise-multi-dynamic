@@ -25,7 +25,7 @@ void runPagerankBatch(const string& data, bool show, int skip, int batch) {
     if (!readSnapTemporal(x, s, skip)) break;
     loopDeadEnds(x);
     auto xt = transposeWithDegree(x);
-    auto a1 = pagerankLevelwise(x, xt);
+    auto a1 = pagerankNvgraph(xt);
     auto ksOld    = vertices(x);
     auto ranksOld = move(a1.ranks);
 
@@ -35,23 +35,41 @@ void runPagerankBatch(const string& data, bool show, int skip, int batch) {
     loopDeadEnds(y);
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
+
+    // Adjust ranks using scaled-fill.
     ranksAdj.resize(y.span());
-
-    // Find static pagerank using standard algorithm.
-    auto a2 = pagerankMonolithic(yt, initStatic, {REPEAT});
-    auto e2 = l1Norm(a2.ranks, a2.ranks);
-    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [static]\n", a2.time, a2.iterations, e2);
-
-    // Find static pagerank using levelwise algorithm.
-    auto a3 = pagerankLevelwise(y, yt, initStatic, {REPEAT});
-    auto e3 = l1Norm(a3.ranks, a2.ranks);
-    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [static]\n", a3.time, a3.iterations, e3);
-
-    // Find dynamic pagerank using levelwise algorithm, with skip-comp and scaled-fill.
     adjustRanks(ranksAdj, ranksOld, ksOld, ks, 0.0f, float(ksOld.size())/ks.size(), 1.0f/ks.size());
-    auto a4 = pagerankLevelwise(x, xt, y, yt, initDynamic, {REPEAT});
+
+    // Find static pagerank using nvGraph.
+    auto a2 = pagerankNvgraph(yt, initStatic, {REPEAT});
+    auto e2 = l1Norm(a2.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankNvgraph [static]\n", a2.time, a2.iterations, e2);
+
+    // Find dynamic pagerank using nvGraph.
+    auto a3 = pagerankNvgraph(yt, initDynamic, {REPEAT});
+    auto e3 = l1Norm(a3.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankNvgraph [dynamic]\n", a3.time, a3.iterations, e3);
+
+    // Find static pagerank (monolithic).
+    auto a4 = pagerankMonolithic(yt, initStatic, {REPEAT});
     auto e4 = l1Norm(a4.ranks, a2.ranks);
-    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [dynamic]\n", a4.time, a4.iterations, e4);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [static]\n", a4.time, a4.iterations, e4);
+
+    // Find dynamic pagerank (monolithic).
+    auto a5 = pagerankMonolithic(yt, initDynamic, {REPEAT});
+    auto e5 = l1Norm(a5.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [dynamic]\n", a5.time, a5.iterations, e5);
+
+    // Find static levelwise pagerank.
+    auto a6 = pagerankLevelwise(y, yt, initStatic, {REPEAT});
+    auto e6 = l1Norm(a6.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [static]\n", a6.time, a6.iterations, e6);
+
+    // Find dynamic levelwise pagerank.
+    auto a7 = pagerankLevelwise(x, xt, y, yt, initDynamic, {REPEAT});
+    auto e7 = l1Norm(a7.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [dynamic]\n", a7.time, a7.iterations, e7);
+
     x = move(y);
   }
 }
