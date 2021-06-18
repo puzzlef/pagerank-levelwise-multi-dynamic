@@ -1,12 +1,50 @@
 #pragma once
 #include <vector>
 #include <utility>
+#include "_main.hxx"
 
 using std::vector;
 using std::move;
 
 
 
+
+// LAUNCH CONFIG
+// -------------
+
+// For pagerank cuda block-per-vertex
+#define BLOCK_DIM_PRB 64
+#define GRID_DIM_PRB  GRID_LIMIT
+
+// For pagerank cuda thread-per-vertex (default)
+#define BLOCK_DIM_PRT 128
+#define GRID_DIM_PRT  8192
+
+// For pagerank cuda thread-per-vertex (low avg. density)
+#define BLOCK_DIM_PRT_LOWDENSITY 512
+#define GRID_DIM_PRT_LOWDENSITY  8192
+
+// For pagerank cuda thread-per-vertex (high avg. degree)
+#define BLOCK_DIM_PRT_HIGHDEGREE 32
+#define GRID_DIM_PRT_HIGHDEGREE  8192
+
+// For pagerank cuda switched (block approach)
+#define BLOCK_DIM_PRSB 256
+#define GRID_DIM_PRSB  GRID_LIMIT
+
+// For pagerank cuda switched (thread approach)
+#define BLOCK_DIM_PRST 512
+#define GRID_DIM_PRST  GRID_LIMIT
+
+// For pagerank cuda switched switch-point
+#define PAGERANK_SWITCH_DEGREE 64
+#define PAGERANK_SWITCH_LIMIT  32
+
+
+
+
+// PAGERANK-OPTIONS
+// ----------------
 
 template <class T>
 struct PagerankOptions {
@@ -20,6 +58,11 @@ struct PagerankOptions {
   repeat(repeat), minComponentSize(minComponentSize), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
 };
 
+
+
+
+// PAGERANK-RESULT
+// ---------------
 
 template <class T>
 struct PagerankResult {

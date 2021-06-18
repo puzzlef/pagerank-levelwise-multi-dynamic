@@ -70,6 +70,16 @@ void runPagerankBatch(const string& data, bool show, int skip, int batch) {
     auto e7 = l1Norm(a7.ranks, a2.ranks);
     print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankLevelwise [dynamic]\n", a7.time, a7.iterations, e7);
 
+    // Find CUDA based static pagerank (monolithic).
+    auto a8 = pagerankMonolithicCuda(yt, initStatic, {REPEAT});
+    auto e8 = l1Norm(a8.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithicCuda [static]\n", a8.time, a8.iterations, e8);
+
+    // Find CUDA based dynamic pagerank (monolithic).
+    auto a9 = pagerankMonolithicCuda(yt, initDynamic, {REPEAT});
+    auto e9 = l1Norm(a9.ranks, a2.ranks);
+    print(yt); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithicCuda [dynamic]\n", a9.time, a9.iterations, e9);
+
     x = move(y);
   }
 }
