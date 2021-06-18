@@ -36,9 +36,21 @@ using std::move;
 #define BLOCK_DIM_PRST 512
 #define GRID_DIM_PRST  GRID_LIMIT
 
-// For pagerank cuda switched switch-point
-#define PAGERANK_SWITCH_DEGREE 64
-#define PAGERANK_SWITCH_LIMIT  32
+
+
+
+// OTHER CONFIG
+// ------------
+
+// For pagerank cuda switched
+#define SWITCH_DEGREE_PR 64
+#define SWITCH_LIMIT_PR  32
+
+// For levelwise pagerank
+#define MIN_COMPONENT_SIZE_PR 50
+
+// For levelwise pagerank cuda
+#define MIN_COMPONENT_SIZE_PRC 50000
 
 
 
@@ -49,13 +61,12 @@ using std::move;
 template <class T>
 struct PagerankOptions {
   int repeat;
-  int minComponentSize;
   T   damping;
   T   tolerance;
   int maxIterations;
 
-  PagerankOptions(int repeat=1, int minComponentSize=50000, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
-  repeat(repeat), minComponentSize(minComponentSize), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
+  PagerankOptions(int repeat=1, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
+  repeat(repeat), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
 };
 
 

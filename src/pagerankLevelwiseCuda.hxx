@@ -20,8 +20,8 @@ using std::swap;
 
 template <class G, class H, class T>
 auto pagerankComponentsCuda(const G& x, const H& xt, const PagerankOptions<T>& o) {
-  auto a  = joinUntilSize(components(x, xt), o.minComponentSize);
-  auto fp = [&](int u) { return xt.degree(u) < PAGERANK_SWITCH_DEGREE; };
+  auto a  = joinUntilSize(components(x, xt), MIN_COMPONENT_SIZE_PRC);
+  auto fp = [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PR; };
   for (auto& c : a) partition(c.begin(), c.end(), fp);
   auto b   = blockgraph(x, a);
   auto bks = topologicalSort(b);
@@ -44,7 +44,7 @@ auto pagerankComponentWaves(const G& w, const H& wt, const C& wcs, const G& x, c
   vector<pair<int, vector<int>>> a;
   for (int i=0; i<X; i++) {
     int n = xcs[i].size();
-    a.push_back({dirty[i]? n:n, pagerankWave(xt, xcs[i])});
+    a.push_back({dirty[i]? n:-n, pagerankWave(xt, xcs[i])});
   }
   return a;
 }

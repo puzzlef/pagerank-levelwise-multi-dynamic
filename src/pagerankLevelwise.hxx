@@ -18,7 +18,7 @@ using std::swap;
 
 template <class G, class H, class T>
 auto pagerankComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
-  auto a = joinUntilSize(components(x, xt), o.minComponentSize);
+  auto a = joinUntilSize(components(x, xt), MIN_COMPONENT_SIZE_PR);
   auto b = blockgraph(x, a);
   auto bks = topologicalSort(b);
   reorder(a, bks);
