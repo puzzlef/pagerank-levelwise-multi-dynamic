@@ -17,3 +17,4 @@
 #include "pagerankLevelwise.hxx"
 #include "pagerankNvgraph.hxx"
 #include "pagerankMonolithicCuda.hxx"
+#include "pagerankLevelwiseCuda.hxx"
