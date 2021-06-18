@@ -400,6 +400,33 @@ void l1NormCu(T *a, const T *x, const T *y, int N) {
 
 
 
+// COPY
+// ----
+
+template <class T>
+__device__ void copyKernelLoop(T *a, const T *x, int N, int i, int DI) {
+  for (; i<N; i+=DI)
+    a[i] = x[i];
+}
+
+
+template <class T>
+__global__ void copyKernel(T *a, const T *x, int N) {
+  DEFINE(t, b, B, G);
+  copyKernelLoop(a, x, N, B*b+t, G*B);
+}
+
+
+template <class T>
+void copyCu(T *a, const T *x, int N) {
+  int B = BLOCK_DIM_M;
+  int G = min(ceilDiv(N, B), GRID_DIM_M);
+  copyKernel<<<G, B>>>(a, x, N);
+}
+
+
+
+
 // MULTIPLY
 // --------
 

@@ -47,10 +47,10 @@ using std::move;
 #define SWITCH_LIMIT_PR  32
 
 // For levelwise pagerank
-#define MIN_COMPONENT_SIZE_PR 50
+#define MIN_COMPUTE_SIZE_PR 50
 
 // For levelwise pagerank cuda
-#define MIN_COMPONENT_SIZE_PRC 50000
+#define MIN_COMPUTE_SIZE_PRC 50000
 
 
 
