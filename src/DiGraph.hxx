@@ -113,7 +113,6 @@ class DiGraph {
 // DI-GRAPH PRINT
 // --------------
 
-
 template <class V, class E>
 void write(ostream& a, const DiGraph<V, E>& x, bool all=false) {
   a << "order: " << x.order() << " size: " << x.size();
@@ -129,7 +128,7 @@ void write(ostream& a, const DiGraph<V, E>& x, bool all=false) {
 }
 
 template <class V, class E>
-void print(const DiGraph<V, E>& x, bool all=false) { write(cout, x, all); }
-
-template <class V, class E>
-void println(const DiGraph<V, E>& x, bool all=false) { print(x, all); cout << "\n"; }
+ostream& operator<<(ostream& a, const DiGraph<V, E>& x) {
+  write(a, x);
+  return a;
+}
