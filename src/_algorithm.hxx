@@ -7,11 +7,13 @@
 using std::vector;
 using std::unordered_map;
 using std::iterator_traits;
-using std::back_inserter;
-using std::set_difference;
+using std::find;
+using std::find_if;
+using std::lower_bound;
 using std::count;
 using std::count_if;
-using std::find;
+using std::set_difference;
+using std::back_inserter;
 
 
 
@@ -26,15 +28,80 @@ auto find(const J& x, const T& v) {
 
 template <class J, class T>
 int findIndex(const J& x, const T& v) {
-  auto i = find(x.begin(), x.end(), v);
-  return i==x.end()? -1 : i-x.begin();
+  return find(x.begin(), x.end(), v) - x.begin();
+}
+
+template <class J, class T>
+int findEqIndex(const J& x, const T& v) {
+  auto it = find(x.begin(), x.end(), v);
+  return it==x.end()? -1 : it-x.begin();
+}
+
+
+template <class I, class F>
+auto findIf(I ib, I ie, F fn) {
+  return find_if(ib, ie, fn);
+}
+
+template <class J, class F>
+auto findIf(const J& x, F fn) {
+  return find_if(x.begin(), x.end(), fn);
+}
+
+template <class J, class F>
+int findIfIndex(const J& x, F fn) {
+  return find_if(x.begin(), x.end(), fn) - x.begin();
+}
+
+template <class J, class F>
+int findIfEqIndex(const J& x, F fn) {
+  auto it = find_if(x.begin(), x.end(), fn);
+  return it==x.end()? -1 : it-x.begin();
 }
 
 
 
 
-// COUNT-*
-// -------
+// LOWER-BOUND
+// -----------
+
+template <class J, class T>
+auto lowerBound(const J& x, const T& v) {
+  return lower_bound(x.begin(), x.end(), v);
+}
+
+template <class J, class T, class F>
+auto lowerBound(const J& x, const T& v, F fc) {
+  return lower_bound(x.begin(), x.end(), v, fc);
+}
+
+template <class J, class T>
+int lowerBoundIndex(const J& x, const T& v) {
+  return lower_bound(x.begin(), x.end(), v) - x.begin();
+}
+
+template <class J, class T, class F>
+int lowerBoundIndex(const J& x, const T& v, F fc) {
+  return lower_bound(x.begin(), x.end(), v, fc) - x.begin();
+}
+
+template <class J, class T>
+int lowerBoundEqIndex(const J& x, const T& v) {
+  auto it = lower_bound(x.begin(), x.end(), v);
+  return it==x.end() || *it!=v? -1 : it-x.begin();
+}
+
+template <class J, class T, class F>
+int lowerBoundEqIndex(const J& x, const T& v, F fc) {
+  auto it = lower_bound(x.begin(), x.end(), v, fc);
+  return it==x.end() || *it!=v? -1 : it-x.begin();
+}
+
+
+
+
+// COUNT
+// -----
 
 template <class J, class T>
 int count(const J& x, const T& v) {
