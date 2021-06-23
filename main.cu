@@ -14,8 +14,13 @@ using namespace std;
 void runExpt(const string& data, bool show) {
   auto ix = range(10);
   auto iy = transform(ix, [](int n) { return n*2; });
-  auto iz = show? ix : iy;
-  for (int v : iy)
+  auto iz = selectInputIter(!show, ix, iy);
+  auto id = defaultIterator(int());
+  printf("id: %zu\n", sizeof(id));
+  printf("ix: %zu\n", sizeof(ix));
+  printf("iy: %zu\n", sizeof(iy));
+  printf("iz: %zu\n", sizeof(iz));
+  for (int v : iz)
     printf("%d\n", v);
 }
 

@@ -10,6 +10,7 @@ using std::output_iterator_tag;
 using std::forward_iterator_tag;
 using std::bidirectional_iterator_tag;
 using std::random_access_iterator_tag;
+using std::iterator_traits;
 using std::unordered_map;
 using std::distance;
 using std::max;
@@ -252,104 +253,34 @@ class DefaultIterator {
 
   public:
   using iterator = DefaultIterator;
-  using difference_type = ptrdiff_t;
+  using iterator_category = random_access_iterator_tag;
+  using difference_type   = ptrdiff_t;
   using value_type = T;
   using reference  = const T&;
   using pointer    = const T*;
 
-  public:
-  DefaultIterator() {}
+  public: // base
+  DefaultIterator() : x() {}
   iterator& operator++() { return *this; }
   reference operator*() const { return x; }
   friend void swap(iterator& l, iterator& r) {}
-};
 
-template <class T>
-auto defaultIter(const T& _) {
-  return DefaultIterator<T>();
-}
-
-
-template <class T>
-class DefaultInputIterator : public DefaultIterator<T> {
-
-  public:
-  using iterator = DefaultInputIterator;
-  using iterator_category = input_iterator_tag;
-  using value_type = typename iterator::value_type;
-  using pointer    = typename iterator::pointer;
-
-  public:
+  public: // input
   iterator operator++(int) { return *this; }
-  value_type operator*() const { return x; }
+  // value_type operator*() const { return x; }
   pointer operator->() const { return &x; }
   friend bool operator==(const iterator& l, const iterator& r) { return true; }
   friend bool operator!=(const iterator& l, const iterator& r) { return false; }
-};
 
-template <class T>
-auto defaultInputIter(const T& _) {
-  return DefaultInputIterator<T>();
-}
+  public: // output
+  // reference operator*() const { return x; }
+  // iterator operator++(int) { return *this; }
 
-
-template <class T>
-class DefaultOutputIterator : public DefaultIterator<T> {
-  public:
-  using iterator = DefaultOutputIterator;
-  using iterator_category = output_iterator_tag;
-  using reference  = typename iterator::reference;
-
-  public:
-  reference operator*() const { return x; }
-  iterator operator++(int) { return *this; }
-};
-
-template <class T>
-auto defaultOutputIter(const T& _) {
-  return DefaultOutputIterator<T>();
-}
-
-
-template <class T>
-class DefaultForwardIterator : public DefaultInputIterator<T>, public DefaultOutputIterator<T> {
-  public:
-  using iterator = DefaultForwardIterator;
-  using iterator_category = forward_iterator_tag;
-};
-
-template <class T>
-auto defaultForwardIter(const T& _) {
-  return DefaultForwardIterator<T>();
-}
-
-
-template <class T>
-class DefaultBidirectionalIterator : public DefaultForwardIterator<T> {
-  public:
-  using iterator = DefaultBidirectionalIterator;
-  using iterator_category = bidirectional_iterator_tag;
-
-  public:
+  public: // bidirectional
   iterator& operator--() { return *this; }
   iterator operator--(int) { return *this; }
-};
 
-template <class T>
-auto defaultBidirectionalIter(const T& _) {
-  return DefaultBidirectionalIterator<T>();
-}
-
-
-template <class T>
-class DefaultRandomAccessIterator : public DefaultBidirectionalIterator<T> {
-  public:
-  using iterator = DefaultRandomAccessIterator;
-  using iterator_category = random_access_iterator_tag;
-  using difference_type   = typename iterator::difference_type;
-  using reference = typename iterator::reference;
-
-  public:
+  public: // random access
   friend bool operator<(const iterator& l, const iterator& r) { return false; }
   friend bool operator>(const iterator& l, const iterator& r) { return false; }
   friend bool operator<=(const iterator& l, const iterator& r) { return true; }
@@ -366,109 +297,151 @@ class DefaultRandomAccessIterator : public DefaultBidirectionalIterator<T> {
 };
 
 template <class T>
-auto defaultRandomAccessIter(const T& _) {
-  return DefaultRandomAccessIterator<T>();
+auto defaultIterator(const T& _) {
+  return DefaultIterator<T>();
 }
 
 
 
 
-// SELECT
-// ------
+// SELECT (BASE)
+// -------------
+// Select iterator by index.
 
-template <class I0, class I1, class I2, class I3, class I4, class I5, class I6, class I7>
-class SelectIterator {
-  using iterator = SelectIterator;
+template <class I0, class I1>
+class Select2BaseIterator {
+  public:
+  using iterator = Select2BaseIterator;
+  using difference_type   = typename I0::difference_type;
+  using value_type = typename I0::value_type;
+  using reference  = typename I0::reference;
+  using pointer    = typename I0::pointer;
 
-  int s;
-  I0 i0;
-  I1 i1;
-  I2 i2;
-  I3 i3;
-  I4 i4;
-  I5 i5;
-  I6 i6;
-  I7 i7;
+  protected:
+  using ID = DefaultIterator<value_type>;
 
   public:
-  ITERATOR_USING_I(I0)
+  const int s;
+  ID id;
+  I0 i0;
+  I1 i1;
+  ID i2;
+  ID i3;
 
-  SelectIterator(int s, I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5, I6 i6, I7 i7)
-  : s(s), i0(i0), i1(i1), i2(i2), i3(i3), i4(i4), i5(i5), i6(i6), i7(i7) {}
-
-  int select() { return s; }
-  auto iterator0() { return i0; }
-  auto iterator1() { return i1; }
-  auto iterator2() { return i2; }
-  auto iterator3() { return i3; }
-  auto iterator4() { return i4; }
-  auto iterator5() { return i5; }
-  auto iterator6() { return i6; }
-  auto iterator7() { return i7; }
+  public:
+  Select2BaseIterator(int s, I0 i0, I1 i1)
+  : s(s), i0(i0), i1(i1), i2(), i3() {}
 
   iterator& operator++() {
     switch (s) {
-      default:
-      case 0: ++i0;
-      case 1: ++i1;
-      case 2: ++i2;
-      case 3: ++i3;
-      case 4: ++i4;
-      case 5: ++i5;
-      case 6: ++i6;
-      case 7: ++i7;
+      default: break;
+      case 0: ++i0; break;
+      case 1: ++i1; break;
     }
     return *this;
   }
 
   reference operator*() {
     switch (s) {
-      default:
+      default: return *id;
       case 0: return *i0;
       case 1: return *i1;
-      case 2: return *i2;
-      case 3: return *i3;
-      case 4: return *i4;
-      case 5: return *i5;
-      case 6: return *i6;
-      case 7: return *i7;
     }
   }
 
   friend void swap(iterator& l, iterator& r) {
     // Does this do the right thing?
-    if (l.select() != r.select()) return;
-    switch (l.select()) {
-      default:
-      case 0: swap(l.i0, r.i0);
-      case 1: swap(l.i1, r.i1);
-      case 2: swap(l.i2, r.i2);
-      case 3: swap(l.i3, r.i3);
-      case 4: swap(l.i4, r.i4);
-      case 5: swap(l.i5, r.i5);
-      case 6: swap(l.i6, r.i6);
-      case 7: swap(l.i7, r.i7);
+    if (l.s != r.s) return;
+    switch (l.s) {
+      default: break;
+      case 0: swap(l.i0, r.i0); break;
+      case 1: swap(l.i1, r.i1); break;
     }
   }
 };
 
 
-template <class I0>
-auto selectIter(int s, I0 i0) {
-  return SelectIterator<I0, I0, I0, I0, I0>
+template <class I0, class I1>
+auto selectBaseIterator(int s, I0 i0, I1 i1) {
+  return Select2BaseIterator<I0, I1>(s, i0, i1);
+}
+
+template <class J0, class J1>
+auto selectBaseIter(int s, const J0& x0, const J1& x1) {
+  auto ib = selectBaseIterator(s, x0.begin(), x1.begin());
+  auto ie = selectBaseIterator(s, x0.end(), x1.end());
+  return iterable(ib, ie);
 }
 
 
-template <class I0, class I1, class I2, class I3, class I4, class I5, class I6, class I7>
-class SelectInputIterator : SelectIterator<I0, I1, I2, I3, I4, I5, I6, I7> {
-  using iterator = SelectInputIterator;
 
+
+// SELECT (INPUT)
+// --------------
+
+template <class I0, class I1>
+class Select2InputIterator : public Select2BaseIterator<I0, I1> {
+  public:
+  using iterator = Select2InputIterator;
+  using iterator_category = input_iterator_tag;
+  using value_type = typename Select2BaseIterator<I0, I1>::value_type;
+  using pointer    = typename Select2BaseIterator<I0, I1>::pointer;
+
+  protected:
+  using ID = DefaultIterator<value_type>;
+
+  public:
+  Select2InputIterator(int s, I0 i0, I1 i1)
+  : Select2BaseIterator<I0, I1>(s, i0, i1) {}
+
+  iterator& operator++() { this->Select2BaseIterator<I0, I1>::operator++(); return *this; }
+  iterator operator++(int) { auto it = *this; ++(*this); return it; }
+  // value_type operator*() const {}
+
+  pointer operator->() {
+    switch (this->s) {
+      default: return this->id.ID::operator->();
+      case 0: return this->i0.I0::operator->();
+      case 1: return this->i1.I1::operator->();
+    }
+  }
+
+  friend bool operator==(const iterator& l, const iterator& r) {
+    if (l.s != r.s) return false;
+    switch (l.s) {
+      default: return true;
+      case 0: return l.i0 == r.i0;
+      case 1: return l.i1 == r.i1;
+    }
+  }
+
+  friend bool operator!=(const iterator& l, const iterator& r) {
+    if (l.s != r.s) return true;
+    switch (l.s) {
+      default: return false;
+      case 0: return l.i0 != r.i0;
+      case 1: return l.i1 != r.i1;
+    }
+  }
 };
+
+
+template <class I0, class I1>
+auto selectInputIterator(int s, I0 i0, I1 i1) {
+  return Select2InputIterator<I0, I1>(s, i0, i1);
+}
+
+template <class J0, class J1>
+auto selectInputIter(int s, const J0& x0, const J1& x1) {
+  auto ib = selectInputIterator(s, x0.begin(), x1.begin());
+  auto ie = selectInputIterator(s, x0.end(), x1.end());
+  return iterable(ib, ie);
+}
+
 
 
 
 /*
-
   reference operator[](difference_type i) {
     switch (s) {
       default:
@@ -480,20 +453,6 @@ class SelectInputIterator : SelectIterator<I0, I1, I2, I3, I4, I5, I6, I7> {
       case 5: return i5[i];
       case 6: return i6[i];
       case 7: return i7[i];
-    }
-  }
-
-  pointer operator->() {
-    switch (s) {
-      default:
-      case 0: return i0.I0::operator->();
-      case 1: return i1.I1::operator->();
-      case 2: return i2.I2::operator->();
-      case 3: return i3.I3::operator->();
-      case 4: return i4.I4::operator->();
-      case 5: return i5.I5::operator->();
-      case 6: return i6.I6::operator->();
-      case 7: return i7.I7::operator->();
     }
   }
 */
