@@ -1,9 +1,11 @@
 #pragma once
+#include <utility>
 #include <cstddef>
 #include <iterator>
 #include <unordered_map>
 #include <algorithm>
 
+using std::tuple;
 using std::ptrdiff_t;
 using std::input_iterator_tag;
 using std::output_iterator_tag;
@@ -14,6 +16,7 @@ using std::iterator_traits;
 using std::unordered_map;
 using std::distance;
 using std::max;
+using std::get;
 
 
 
@@ -37,6 +40,13 @@ using std::max;
   using reference  = typename I::reference; \
   using pointer    = typename I::pointer;
 
+#define ITERATOR_USING_IC(I, cat) \
+  using iterator_category = cat; \
+  using difference_type   = typename I::difference_type; \
+  using value_type = typename I::value_type; \
+  using reference  = typename I::reference; \
+  using pointer    = typename I::pointer;
+
 #define ITERATOR_USING_IVR(I, val, ref) \
   using iterator_category = typename I::iterator_category; \
   using difference_type   = typename I::difference_type; \
@@ -47,9 +57,14 @@ using std::max;
 
 
 #ifndef ITERATOR_DEREF
-#define ITERATOR_DEREF(I, i, de, ie, pe) \
+#define ITERATOR_DEREF(I, n, de, ie) \
   reference operator*() { return de; } \
-  reference operator[](difference_type i) { return ie; } \
+  reference operator[](difference_type n) { return ie; }
+#endif
+
+
+#ifndef ITERATOR_PTR
+#define ITERATOR_PTR(I, pe) \
   pointer operator->() { return pe; }
 #endif
 
@@ -70,15 +85,15 @@ using std::max;
 
 
 #ifndef ITERATOR_ADVANCE
-#define ITERATOR_ADVANCEP(I, i, fe) \
-  I& operator+=(difference_type i) { fe; return *this; }
+#define ITERATOR_ADVANCEP(I, n, fe) \
+  I& operator+=(difference_type n) { fe; return *this; }
 
-#define ITERATOR_ADVANCEN(I, i, be) \
-  I& operator-=(difference_type i) { be; return *this; }
+#define ITERATOR_ADVANCEN(I, n, be) \
+  I& operator-=(difference_type n) { be; return *this; }
 
-#define ITERATOR_ADVANCE(I, i, fe, be) \
-  ITERATOR_ADVANCEP(I, i, fe) \
-  ITERATOR_ADVANCEN(I, i, be)
+#define ITERATOR_ADVANCE(I, n, fe, be) \
+  ITERATOR_ADVANCEP(I, n, fe) \
+  ITERATOR_ADVANCEN(I, n, be)
 #endif
 
 
@@ -259,7 +274,8 @@ class TransformIterator {
   public:
   ITERATOR_USING_IVR(I, decltype(fn(*it)), value_type)
   TransformIterator(I it, F fn) : it(it), fn(fn) {}
-  ITERATOR_DEREF(iterator, i, fn(*it), fn(it[i]), NULL)
+  ITERATOR_DEREF(iterator, i, fn(*it), fn(it[i]))
+  ITERATOR_PTR(iterator, NULL)
   ITERATOR_NEXT(iterator, ++it, --it)
   ITERATOR_ADVANCE(iterator, i, it += i, it -= i)
   ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.it+b))
@@ -296,7 +312,8 @@ class FilterIterator {
   public:
   ITERATOR_USING_I(I);
   FilterIterator(I ix, I ie, F fn) : it(ix), ie(ie), fn(fn) { while (it!=ie && !fn(*it)) ++it; }
-  ITERATOR_DEREF(iterator, i, *it, it[i], it.I::operator->())
+  ITERATOR_DEREF(iterator, i, *it, it[i])
+  ITERATOR_PTR(iterator, it.I::operator->())
   ITERATOR_NEXTP(iterator, do { ++it; } while (it!=ie && !fn(*it)))
   ITERATOR_ADVANCEP(iterator, i, for (; i>0; i--) ++it)
   ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.it+b))
@@ -341,7 +358,8 @@ class RangeIterator {
   public:
   ITERATOR_USING(random_access_iterator_tag, T, T, T, const T*)
   RangeIterator(T n) : n(n) {}
-  ITERATOR_DEREF(iterator, i, n, n+i, &n)
+  ITERATOR_DEREF(iterator, i, n, n+i)
+  ITERATOR_PTR(iterator, &n)
   ITERATOR_NEXT(iterator, ++n, --n)
   ITERATOR_ADVANCE(iterator, i, n += i, n -= i)
   ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.n+b))
@@ -378,7 +396,8 @@ class DefaultIterator {
   public:
   ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, const T&, const T*)
   DefaultIterator() : x() {}
-  ITERATOR_DEREF(iterator, i, x, x, &x)
+  ITERATOR_DEREF(iterator, i, x, x)
+  ITERATOR_PTR(iterator, &x)
   ITERATOR_NEXT(iterator, {}, {})
   ITERATOR_ADVANCE(iterator, i, {}, {})
   ITERATOR_ARITHMETICP(iterator, it, n, it)
@@ -400,7 +419,8 @@ class DefaultValueIterator {
   public:
   ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, T, const T*)
   DefaultValueIterator() {}
-  ITERATOR_DEREF(iterator, i, T(), T(), NULL)
+  ITERATOR_DEREF(iterator, i, T(), T())
+  ITERATOR_PTR(iterator, NULL)
   ITERATOR_NEXT(iterator, {}, {})
   ITERATOR_ADVANCE(iterator, i, {}, {})
   ITERATOR_ARITHMETICP(iterator, it, n, it)
@@ -416,43 +436,68 @@ auto defaultValueIterator(const T& _) {
 
 
 
-// SELECT (BASE)
-// -------------
-// Select iterator by index.
+// TERNARY
+// -------
+// Select iterator by boolean.
 
 template <class I0, class I1>
-class Select2BaseIterator {
-  public:
-  using iterator = Select2BaseIterator;
-  using difference_type   = typename I0::difference_type;
-  using value_type = typename I0::value_type;
-  using reference  = typename I0::reference;
-  using pointer    = typename I0::pointer;
-
-  protected:
-  using ID = DefaultIterator<value_type>;
+class TernaryIterator {
+  using iterator = TernaryIterator;
+  const bool sel;
+  I0 i0; I1 i1;
 
   public:
-  const int s;
-  I0 i0;
-  I1 i1;
-  ID i2;
-  ID i3;
-  ID i4;
-  ID i5;
-  ID i6;
-  ID i7;
-  ID id;
+  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, const T&, const T*)
+  TernaryIterator(bool sel, I0 i0, I1 i1) : sel(sel), is(i0, i1) {}
+  ITERATOR_DEREF(iterator, n, sel? *i1 : *i0, sel? i1[n] : i0[n])
+  ITERATOR_PTR(iterator, sel? i1.I1::operator->() : i0.I0::operator->())
+  ITERATOR_NEXT(iterator, sel? ++i1 : ++i0, sel? --i1 : --i0)
+  ITERATOR_ADVANCE(iterator, n, sel? i1+=n : i0+=n, sel? i1-=n : i0-=n)
+  ITERATOR_ARITHMETICP(iterator, it, n, sel? it+n: )
+  ITERATOR_ARITHMETICN(iterator, it, n, it+n)
+  ITERATOR_COMPARISION(iterator, l, r, 0, 0)
+};
+
+
+template <class T>
+auto defaultIterator(const T& _) {
+  return DefaultIterator<T>();
+}
+
+
+
+
+
+// SELECT
+// ------
+// Select iterator by index.
+
+template <class I>
+void selectInc(int s, tuple<I...>& is) {
+}
+
+template <class I0, class... I>
+class SelectIterator {
+  using iterator = SelectIterator;
+  const int sel;
+  tuple<I0, I...> is;
+
 
   public:
-  Select2BaseIterator(int s, I0 i0, I1 i1)
-  : s(s), i0(i0), i1(i1), i2(), i3(), i4(), i5(), i6(), i7(), id() {}
+  ITERATOR_USING_IC(I0, random_access_iterator_tag)
+  SelectIterator(int sel, I0 i0, I... i)
+  : sel(sel), is(i0, ...i) {}
 
   iterator& operator++() {
-    switch (s) {
-      default: break;
-      case 0: ++i0; break;
-      case 1: ++i1; break;
+    switch (sel) {
+      case 0: ++get<0>(is); break;
+      case 1: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
+      case 0: ++get<0>(is); break;
     }
     return *this;
   }
