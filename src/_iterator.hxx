@@ -304,6 +304,8 @@ class DefaultRefIterator : public DefaultIterator<T> {
 
   public:
   using iterator = DefaultRefIterator;
+  using reference  = const T&;
+  using pointer    = const T*;
 
   public:
   DefaultRefIterator() : x() {}
