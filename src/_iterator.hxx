@@ -571,9 +571,9 @@ class RangeIterator {
   T n;
 
   public:
-  ITERATOR_USING(random_access_iterator_tag, T, T, T, T*)
+  ITERATOR_USING(random_access_iterator_tag, T, T, T, const T*)
   RangeIterator(T n) : n(n) {}
-  ITERATOR_DEREF(RangeIterator, i, n, n+i, this)
+  ITERATOR_DEREF(RangeIterator, i, n, n+i, &n)
   ITERATOR_NEXT(RangeIterator, ++n, --n)
   ITERATOR_ADVANCE(RangeIterator, i, n += i, n -= i)
   ITERATOR_ARITHMETICP(RangeIterator, a, b, a.n+b)
@@ -583,14 +583,14 @@ class RangeIterator {
 
 
 template <class T>
-auto range(T V) {
-  auto b = RangeIterator<T>(0);
-  auto e = RangeIterator<T>(V);
-  return iterable(b, e);
+auto rangeIter(T V) {
+  auto ib = RangeIterator<T>(0);
+  auto ie = RangeIterator<T>(V);
+  return iterable(ib, ie);
 }
 
 template <class T>
-auto range(T v, T V, T DV=1) {
-  auto x = range(rangeSize(v, V, DV));
+auto rangeIter(T v, T V, T DV=1) {
+  auto x = rangeIter(rangeSize(v, V, DV));
   return transform(x, [=](int n) { return v+DV*n; });
 }
