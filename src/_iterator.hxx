@@ -248,9 +248,6 @@ auto slice(const J& x, int i, int I) {
 
 template <class T>
 class DefaultIterator {
-  protected:
-  const T x;
-
   public:
   using iterator = DefaultIterator;
   using iterator_category = random_access_iterator_tag;
@@ -262,19 +259,14 @@ class DefaultIterator {
   public: // base
   DefaultIterator() : x() {}
   iterator& operator++() { return *this; }
-  reference operator*() const { return x; }
+  value_type operator*() const { return T(); }
   friend void swap(iterator& l, iterator& r) {}
 
   public: // input
   iterator operator++(int) { return *this; }
-  // value_type operator*() const { return x; }
-  pointer operator->() const { return &x; }
+  pointer operator->() const { return NULL; }
   friend bool operator==(const iterator& l, const iterator& r) { return true; }
   friend bool operator!=(const iterator& l, const iterator& r) { return false; }
-
-  public: // output
-  // reference operator*() const { return x; }
-  // iterator operator++(int) { return *this; }
 
   public: // bidirectional
   iterator& operator--() { return *this; }
@@ -293,12 +285,36 @@ class DefaultIterator {
   friend iterator operator-(const iterator& l, size_t n) { return l; }
   friend difference_type operator-(const iterator& l, const iterator& r) { return 0; }
 
-  reference operator[](size_t i) const { return x; }
+  reference operator[](size_t i) const { return T(); }
 };
 
 template <class T>
 auto defaultIterator(const T& _) {
   return DefaultIterator<T>();
+}
+
+
+// DEFAULT (REF)
+// -------------
+// Return default value of type, always.
+
+template <class T>
+class DefaultRefIterator : public DefaultIterator<T> {
+  const T x;
+
+  public:
+  using iterator = DefaultRefIterator;
+
+  public:
+  DefaultRefIterator() : x() {}
+  reference operator*() const { return x; }
+  pointer operator->() const { return &x; }
+  reference operator[](size_t i) const { return x; }
+};
+
+template <class T>
+auto defaultRefIterator(const T& _) {
+  return DefaultRefIterator<T>();
 }
 
 
