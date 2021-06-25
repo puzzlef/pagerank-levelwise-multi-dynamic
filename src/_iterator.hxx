@@ -529,7 +529,7 @@ class FilterIterator {
   public:
   ITERATOR_USING_I(I);
   FilterIterator(I ix, I ie, F fn) : it(ix), ie(ie), fn(fn) { while (it!=ie && !fn(*it)) ++it; }
-  ITERATOR_DEREF(FilterIterator, i, *it, it[i], NULL)
+  ITERATOR_DEREF(FilterIterator, i, *it, it[i], it.I::operator->())
   ITERATOR_NEXTP(FilterIterator, do { ++it; } while (it!=ie && !fn(*it)))
   ITERATOR_ADVANCEP(FilterIterator, i, for (; i>0; i--) ++it)
   ITERATOR_ARITHMETICP(FilterIterator, a, b, a.it+b)
@@ -538,15 +538,15 @@ class FilterIterator {
 
 
 template <class I, class F>
-auto filter(I ib, I ie, F fn) {
-  auto b = FilterIterator<I, F>(ib, ie, fn);
-  auto e = FilterIterator<I, F>(ie, ie, fn);
-  return iterable(b, e);
+auto filterIter(I ib, I ie, F fn) {
+  auto ib = FilterIterator<I, F>(ib, ie, fn);
+  auto ie = FilterIterator<I, F>(ie, ie, fn);
+  return iterable(ib, ie);
 }
 
 template <class J, class F>
-auto filter(const J& x, F fn) {
-  return filter(x.begin(), x.end(), fn);
+auto filterIter(const J& x, F fn) {
+  return filterIter(x.begin(), x.end(), fn);
 }
 
 
