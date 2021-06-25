@@ -116,74 +116,6 @@ using std::max;
 
 
 
-// ITERABLE
-// --------
-
-template <class I>
-class Iterable {
-  const I ib, ie;
-
-  public:
-  Iterable(I ib, I ie) : ib(ib), ie(ie) {}
-  auto begin()  const { return ib; }
-  auto end()    const { return ie; }
-  size_t size() const { return distance(ib, ie); }
-  bool empty()  const { return ib == ie; }
-};
-
-
-template <class I>
-auto makeIter(I ib, I ie) {
-  return Iterable<I>(ib, ie);
-}
-
-template <class J>
-auto makeIter(const J& x) {
-  using I = decltype(x.begin());
-  return Iterable<I>(x.begin(), x.end());
-}
-
-
-
-
-// SIZED-ITERABLE
-// --------------
-
-template <class I>
-class SizedIterable : public Iterable<I> {
-  const size_t N;
-
-  public:
-  SizedIterable(I ib, I ie, size_t N) : Iterable<I>(ib, ie), N(N) {}
-  ITERABLE_SIZE(N)
-};
-
-
-template <class I>
-auto sizedIterable(I ib, I ie, int N) {
-  return SizedIterable<I>(ib, ie, N);
-}
-
-template <class I>
-auto sizedIterable(I ib, I ie) {
-  return SizedIterable<I>(ib, ie, distance(ib, ie));
-}
-
-template <class J>
-auto sizedIterable(const J& x, int N) {
-  using I = decltype(x.begin());
-  return Iterable<I>(x.begin(), x.end(), N);
-}
-
-template <class J>
-auto sizedIterable(const J& x) {
-  using I = decltype(x.begin());
-  return Iterable<I>(x.begin(), x.end());
-}
-
-
-
-
 // SIZE
 // ----
 
@@ -227,20 +159,91 @@ int csize(const J& x) {
 
 
 
+// ITERABLE
+// --------
+
+template <class I>
+class Iterable {
+  const I ib, ie;
+
+  public:
+  Iterable(I ib, I ie) : ib(ib), ie(ie) {}
+  auto begin()  const { return ib; }
+  auto end()    const { return ie; }
+  size_t size() const { return distance(ib, ie); }
+  bool empty()  const { return ib == ie; }
+};
+
+
+template <class I>
+auto makeIter(I ib, I ie) {
+  return Iterable<I>(ib, ie);
+}
+
+template <class J>
+auto makeIter(const J& x) {
+  using I = decltype(x.begin());
+  return Iterable<I>(x.begin(), x.end());
+}
+
+
+
+
+// SIZED-ITERABLE
+// --------------
+
+template <class I>
+class SizedIterable : public Iterable<I> {
+  const size_t N;
+
+  public:
+  SizedIterable(I ib, I ie, size_t N) : Iterable<I>(ib, ie), N(N) {}
+  SizedIterable(I ib, I ie) : Iterable<I>(ib, ie), N(distance(ib, ie)) {}
+  size_t size() const { return N; }
+  bool empty()  const { return N==0; }
+};
+
+
+template <class I>
+auto sizedIter(I ib, I ie, int N) {
+  return SizedIterable<I>(ib, ie, N);
+}
+
+template <class I>
+auto sizedIter(I ib, I ie) {
+  return SizedIterable<I>(ib, ie);
+}
+
+template <class J>
+auto sizedIter(const J& x, int N) {
+  using I = decltype(x.begin());
+  return SizedIterable<I>(x.begin(), x.end(), N);
+}
+
+template <class J>
+auto sizedIterable(const J& x) {
+  using I = decltype(x.begin());
+  return SizedIterable<I>(x.begin(), x.end());
+}
+
+
+
+
 // SLICE
 // -----
 
 template <class J>
-auto slice(const J& x, int i) {
-  auto ib = x.begin(), ie = x.end();
-  return sizedIterable(ib+i<ie? ib+i : ie, ie);
+auto sliceIter(const J& x, int i) {
+  auto b = x.begin(), e = x.end();
+  return sizedIter(b+i<e? b+i:e, e);
 }
 
 template <class J>
-auto slice(const J& x, int i, int I) {
-  auto ib = x.begin(), ie = x.end();
-  return sizedIterable(ib+i<ie? ib+i : ie, ib+I<ie? ib+I : ie, I-i);
+auto sliceIter(const J& x, int i, int I) {
+  auto b = x.begin(), e = x.end();
+  return sizedIter(b+i<e? b+i:e, b+I<e? b+I:e, I-i);
 }
+
 
 
 
