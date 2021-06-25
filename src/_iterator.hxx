@@ -257,7 +257,7 @@ class DefaultIterator {
   using pointer    = const T*;
 
   public: // base
-  DefaultIterator() : x() {}
+  DefaultIterator() {}
   iterator& operator++() { return *this; }
   value_type operator*() const { return T(); }
   friend void swap(iterator& l, iterator& r) {}
@@ -340,15 +340,19 @@ class Select2BaseIterator {
 
   public:
   const int s;
-  ID id;
   I0 i0;
   I1 i1;
   ID i2;
   ID i3;
+  ID i4;
+  ID i5;
+  ID i6;
+  ID i7;
+  ID id;
 
   public:
   Select2BaseIterator(int s, I0 i0, I1 i1)
-  : s(s), i0(i0), i1(i1), i2(), i3() {}
+  : s(s), i0(i0), i1(i1), i2(), i3(), i4(), i5(), i6(), i7(), id() {}
 
   iterator& operator++() {
     switch (s) {
