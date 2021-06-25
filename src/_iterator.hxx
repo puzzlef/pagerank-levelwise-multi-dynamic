@@ -47,21 +47,21 @@ using std::max;
 
 
 #ifndef ITERATOR_DEREF
-#define ITERATOR_DEREF(I, i, se, be, ae) \
-  reference operator*() { return se; } \
-  reference operator[](difference_type i) { return be; } \
-  pointer operator->() { return ae; }
+#define ITERATOR_DEREF(I, i, de, ie, pe) \
+  reference operator*() { return de; } \
+  reference operator[](difference_type i) { return ie; } \
+  pointer operator->() { return pe; }
 #endif
 
 
 #ifndef ITERATOR_NEXT
 #define ITERATOR_NEXTP(I, ie)  \
   I& operator++() { ie; return *this; }  \
-  I operator++(int) { I a = *this; ++(*this); return a; }
+  I operator++(int) { I it = *this; ++(*this); return it; }
 
 #define ITERATOR_NEXTN(I, de) \
   I& operator--() { de; return *this; }  \
-  I operator--(int) { I a = *this; --(*this); return a; }
+  I operator--(int) { I it = *this; --(*this); return it; }
 
 #define ITERATOR_NEXT(I, ie, de) \
   ITERATOR_NEXTP(I, ie) \
@@ -83,27 +83,27 @@ using std::max;
 
 
 #ifndef ITERATOR_ARITHMETICP
-#define ITERATOR_ARITHMETICP(I, a, b, ...)  \
-  friend I operator+(const I& a, difference_type b) { return I(__VA_ARGS__); } \
-  friend I operator+(difference_type b, const I& a) { return I(__VA_ARGS__); }
+#define ITERATOR_ARITHMETICP(I, it, n, ...)  \
+  friend I operator+(const I& it, difference_type n) { return __VA_ARGS__; } \
+  friend I operator+(difference_type n, const I& it) { return __VA_ARGS__; }
 #endif
 
 
 #ifndef ITERATOR_ARITHMETICN
-#define ITERATOR_ARITHMETICN(I, a, b, ...) \
-  friend I operator-(const I& a, difference_type b) { return I(__VA_ARGS__); } \
-  friend I operator-(difference_type b, const I& a) { return I(__VA_ARGS__); }
+#define ITERATOR_ARITHMETICN(I, it, n, ...) \
+  friend I operator-(const I& it, difference_type n) { return __VA_ARGS__; } \
+  friend I operator-(difference_type n, const I& it) { return __VA_ARGS__; }
 #endif
 
 
 #ifndef ITERATOR_COMPARISION
-#define ITERATOR_COMPARISION(I, a, b, ae, be)  \
-  friend bool operator==(const I& a, const I& b) { return ae == be; } \
-  friend bool operator!=(const I& a, const I& b) { return ae != be; } \
-  friend bool operator>=(const I& a, const I& b) { return ae >= be; } \
-  friend bool operator<=(const I& a, const I& b) { return ae <= be; } \
-  friend bool operator>(const I& a, const I& b) { return ae > be; } \
-  friend bool operator<(const I& a, const I& b) { return ae < be; }
+#define ITERATOR_COMPARISION(I, l, r, le, re)  \
+  friend bool operator==(const I& l, const I& r) { return le == re; } \
+  friend bool operator!=(const I& l, const I& r) { return le != re; } \
+  friend bool operator>=(const I& l, const I& r) { return le >= re; } \
+  friend bool operator<=(const I& l, const I& r) { return le <= re; } \
+  friend bool operator> (const I& l, const I& r) { return le >  re; } \
+  friend bool operator< (const I& l, const I& r) { return le <  re; }
 #endif
 
 
@@ -112,49 +112,6 @@ using std::max;
   size_t size() { return se; } \
   bool empty() { return size() == 0; }
 #endif
-
-
-
-
-// SIZE
-// ----
-
-template <class T>
-int size(const vector<T>& x) {
-  return x.size();
-}
-
-template <class I>
-int size(const SizedIterable<I>& x) {
-  return x.size();
-}
-
-template <class J>
-int size(const J& x) {
-  return distance(x.begin(), x.end());
-}
-
-
-
-
-// CSIZE
-// -----
-// Compile-time size.
-
-template <class T>
-int csize(const vector<T>& x) {
-  return x.size();
-}
-
-template <class I>
-int csize(const SizedIterable<I>& x) {
-  return x.size();
-}
-
-template <class J>
-int csize(const J& x) {
-  return -1;
-}
 
 
 
@@ -229,6 +186,49 @@ auto sizedIterable(const J& x) {
 
 
 
+// SIZE
+// ----
+
+template <class T>
+int size(const vector<T>& x) {
+  return x.size();
+}
+
+template <class I>
+int size(const SizedIterable<I>& x) {
+  return x.size();
+}
+
+template <class J>
+int size(const J& x) {
+  return distance(x.begin(), x.end());
+}
+
+
+
+
+// CSIZE
+// -----
+// Compile-time size.
+
+template <class T>
+int csize(const vector<T>& x) {
+  return x.size();
+}
+
+template <class I>
+int csize(const SizedIterable<I>& x) {
+  return x.size();
+}
+
+template <class J>
+int csize(const J& x) {
+  return -1;
+}
+
+
+
+
 // SLICE
 // -----
 
@@ -247,51 +247,145 @@ auto sliceIter(const J& x, int i, int I) {
 
 
 
+// TRANSFORM
+// ---------
+
+template <class I, class F>
+class TransformIterator {
+  using iterator = TransformIterator;
+  I it;
+  const F fn;
+
+  public:
+  ITERATOR_USING_IVR(I, decltype(fn(*it)), value_type)
+  TransformIterator(I it, F fn) : it(it), fn(fn) {}
+  ITERATOR_DEREF(iterator, i, fn(*it), fn(it[i]), NULL)
+  ITERATOR_NEXT(iterator, ++it, --it)
+  ITERATOR_ADVANCE(iterator, i, it += i, it -= i)
+  ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.it+b))
+  ITERATOR_ARITHMETICN(iterator, a, b, iterator(a.it-b))
+  ITERATOR_COMPARISION(iterator, a, b, a.it, b.it)
+};
+
+
+template <class I, class F>
+auto transformIter(I ib, I ie, F fn) {
+  auto b = TransformIterator<I, F>(ib, fn);
+  auto e = TransformIterator<I, F>(ie, fn);
+  return makeIter(b, e);
+}
+
+template <class J, class F>
+auto transformIter(const J& x, F fn) {
+  return transformIter(x.begin(), x.end(), fn);
+}
+
+
+
+
+// FILTER
+// ------
+
+template <class I, class F>
+class FilterIterator {
+  using iterator = FilterIterator;
+  I it;
+  const I ie;
+  const F fn;
+
+  public:
+  ITERATOR_USING_I(I);
+  FilterIterator(I ix, I ie, F fn) : it(ix), ie(ie), fn(fn) { while (it!=ie && !fn(*it)) ++it; }
+  ITERATOR_DEREF(iterator, i, *it, it[i], it.I::operator->())
+  ITERATOR_NEXTP(iterator, do { ++it; } while (it!=ie && !fn(*it)))
+  ITERATOR_ADVANCEP(iterator, i, for (; i>0; i--) ++it)
+  ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.it+b))
+  ITERATOR_COMPARISION(iterator, a, b, a.it, b.it)
+};
+
+
+template <class I, class F>
+auto filterIter(I ib, I ie, F fn) {
+  auto b = FilterIterator<I, F>(ib, ie, fn);
+  auto e = FilterIterator<I, F>(ie, ie, fn);
+  return makeIter(b, e);
+}
+
+template <class J, class F>
+auto filterIter(const J& x, F fn) {
+  return filterIter(x.begin(), x.end(), fn);
+}
+
+
+
+
+// RANGE
+// -----
+
+template <class T>
+int rangeSize(T v, T V, T DV=1) {
+  return max(0, (int) ceilDiv(V-v, DV));
+}
+
+template <class T>
+int rangeLast(T v, T V, T DV=1) {
+  return v + DV*(rangeSize(v, V, DV) - 1);
+}
+
+
+template <class T>
+class RangeIterator {
+  using iterator = RangeIterator;
+  T n;
+
+  public:
+  ITERATOR_USING(random_access_iterator_tag, T, T, T, const T*)
+  RangeIterator(T n) : n(n) {}
+  ITERATOR_DEREF(iterator, i, n, n+i, &n)
+  ITERATOR_NEXT(iterator, ++n, --n)
+  ITERATOR_ADVANCE(iterator, i, n += i, n -= i)
+  ITERATOR_ARITHMETICP(iterator, a, b, iterator(a.n+b))
+  ITERATOR_ARITHMETICN(iterator, a, b, iterator(a.n-b))
+  ITERATOR_COMPARISION(iterator, a, b, a.n, b.n)
+};
+
+
+template <class T>
+auto rangeIter(T V) {
+  auto b = RangeIterator<T>(0);
+  auto e = RangeIterator<T>(V);
+  return makeIter(b, e);
+}
+
+template <class T>
+auto rangeIter(T v, T V, T DV=1) {
+  auto x = rangeIter(rangeSize(v, V, DV));
+  return transformIter(x, [=](int n) { return v+DV*n; });
+}
+
+
+
+
 // DEFAULT
 // -------
 // Return default value of type, always.
 
 template <class T>
 class DefaultIterator {
-  public:
   using iterator = DefaultIterator;
-  using iterator_category = random_access_iterator_tag;
-  using difference_type   = ptrdiff_t;
-  using value_type = T;
-  using reference  = const T&;
-  using pointer    = const T*;
+  const T x;
 
-  public: // base
-  DefaultIterator() {}
-  iterator& operator++() { return *this; }
-  value_type operator*() const { return T(); }
-  friend void swap(iterator& l, iterator& r) {}
-
-  public: // input
-  iterator operator++(int) { return *this; }
-  pointer operator->() const { return NULL; }
-  friend bool operator==(const iterator& l, const iterator& r) { return true; }
-  friend bool operator!=(const iterator& l, const iterator& r) { return false; }
-
-  public: // bidirectional
-  iterator& operator--() { return *this; }
-  iterator operator--(int) { return *this; }
-
-  public: // random access
-  friend bool operator<(const iterator& l, const iterator& r) { return false; }
-  friend bool operator>(const iterator& l, const iterator& r) { return false; }
-  friend bool operator<=(const iterator& l, const iterator& r) { return true; }
-  friend bool operator>=(const iterator& l, const iterator& r) { return true; }
-
-  iterator& operator+=(size_t n) { return *this; }
-  friend iterator operator+(const iterator& l, size_t n) { return l; }
-  friend iterator operator+(size_t n, const iterator& r) { return r; }
-  iterator& operator-=(size_t n) { return *this; }
-  friend iterator operator-(const iterator& l, size_t n) { return l; }
-  friend difference_type operator-(const iterator& l, const iterator& r) { return 0; }
-
-  reference operator[](size_t i) const { return T(); }
+  public:
+  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, const T&, const T*)
+  DefaultIterator() : x() {}
+  ITERATOR_DEREF(iterator, i, x, x, &x)
+  ITERATOR_NEXT(iterator, {}, {})
+  ITERATOR_ADVANCE(iterator, i, {}, {})
+  ITERATOR_ARITHMETICP(iterator, it, n, it)
+  ITERATOR_ARITHMETICN(iterator, it, n, it)
+  ITERATOR_COMPARISION(iterator, l, r, 0, 0)
 };
+
 
 template <class T>
 auto defaultIterator(const T& _) {
@@ -299,29 +393,24 @@ auto defaultIterator(const T& _) {
 }
 
 
-// DEFAULT (REF)
-// -------------
-// Return default value of type, always.
-
 template <class T>
-class DefaultRefIterator : public DefaultIterator<T> {
-  const T x;
+class DefaultValueIterator {
+  using iterator = DefaultValueIterator;
 
   public:
-  using iterator = DefaultRefIterator;
-  using reference  = const T&;
-  using pointer    = const T*;
-
-  public:
-  DefaultRefIterator() : x() {}
-  reference operator*() const { return x; }
-  pointer operator->() const { return &x; }
-  reference operator[](size_t i) const { return x; }
+  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, T, const T*)
+  DefaultValueIterator() {}
+  ITERATOR_DEREF(iterator, i, T(), T(), NULL)
+  ITERATOR_NEXT(iterator, {}, {})
+  ITERATOR_ADVANCE(iterator, i, {}, {})
+  ITERATOR_ARITHMETICP(iterator, it, n, it)
+  ITERATOR_ARITHMETICN(iterator, it, n, it)
+  ITERATOR_COMPARISION(iterator, l, r, 0, 0)
 };
 
 template <class T>
-auto defaultRefIterator(const T& _) {
-  return DefaultRefIterator<T>();
+auto defaultValueIterator(const T& _) {
+  return DefaultValueIterator<T>();
 }
 
 
@@ -483,117 +572,3 @@ auto selectInputIter(int s, const J0& x0, const J1& x1) {
     }
   }
 */
-
-
-// TRANSFORM
-// ---------
-
-template <class I, class F>
-class TransformIterator {
-  I it;
-  const F fn;
-
-  public:
-  ITERATOR_USING_IVR(I, decltype(fn(*it)), value_type)
-  TransformIterator(I it, F fn) : it(it), fn(fn) {}
-  ITERATOR_DEREF(TransformIterator, i, fn(*it), fn(it[i]), NULL)
-  ITERATOR_NEXT(TransformIterator, ++it, --it)
-  ITERATOR_ADVANCE(TransformIterator, i, it += i, it -= i)
-  ITERATOR_ARITHMETICP(TransformIterator, a, b, a.it+b)
-  ITERATOR_ARITHMETICN(TransformIterator, a, b, a.it-b)
-  ITERATOR_COMPARISION(TransformIterator, a, b, a.it, b.it)
-};
-
-
-template <class I, class F>
-auto transformIter(I ib, I ie, F fn) {
-  auto b = TransformIterator<I, F>(ib, fn);
-  auto e = TransformIterator<I, F>(ie, fn);
-  return makeIter(b, e);
-}
-
-template <class J, class F>
-auto transformIter(const J& x, F fn) {
-  return transformIter(x.begin(), x.end(), fn);
-}
-
-
-
-
-// FILTER
-// ------
-
-template <class I, class F>
-class FilterIterator {
-  I it;
-  const I ie;
-  const F fn;
-
-  public:
-  ITERATOR_USING_I(I);
-  FilterIterator(I ix, I ie, F fn) : it(ix), ie(ie), fn(fn) { while (it!=ie && !fn(*it)) ++it; }
-  ITERATOR_DEREF(FilterIterator, i, *it, it[i], it.I::operator->())
-  ITERATOR_NEXTP(FilterIterator, do { ++it; } while (it!=ie && !fn(*it)))
-  ITERATOR_ADVANCEP(FilterIterator, i, for (; i>0; i--) ++it)
-  ITERATOR_ARITHMETICP(FilterIterator, a, b, a.it+b)
-  ITERATOR_COMPARISION(FilterIterator, a, b, a.it, b.it)
-};
-
-
-template <class I, class F>
-auto filterIter(I ib, I ie, F fn) {
-  auto b = FilterIterator<I, F>(ib, ie, fn);
-  auto e = FilterIterator<I, F>(ie, ie, fn);
-  return makeIter(b, e);
-}
-
-template <class J, class F>
-auto filterIter(const J& x, F fn) {
-  return filterIter(x.begin(), x.end(), fn);
-}
-
-
-
-
-// RANGE
-// -----
-
-template <class T>
-int rangeSize(T v, T V, T DV=1) {
-  return max(0, (int) ceilDiv(V-v, DV));
-}
-
-template <class T>
-int rangeLast(T v, T V, T DV=1) {
-  return v + DV*(rangeSize(v, V, DV) - 1);
-}
-
-
-template <class T>
-class RangeIterator {
-  T n;
-
-  public:
-  ITERATOR_USING(random_access_iterator_tag, T, T, T, const T*)
-  RangeIterator(T n) : n(n) {}
-  ITERATOR_DEREF(RangeIterator, i, n, n+i, &n)
-  ITERATOR_NEXT(RangeIterator, ++n, --n)
-  ITERATOR_ADVANCE(RangeIterator, i, n += i, n -= i)
-  ITERATOR_ARITHMETICP(RangeIterator, a, b, a.n+b)
-  ITERATOR_ARITHMETICN(RangeIterator, a, b, a.n-b)
-  ITERATOR_COMPARISION(RangeIterator, a, b, a.n, b.n)
-};
-
-
-template <class T>
-auto rangeIter(T V) {
-  auto b = RangeIterator<T>(0);
-  auto e = RangeIterator<T>(V);
-  return makeIter(b, e);
-}
-
-template <class T>
-auto rangeIter(T v, T V, T DV=1) {
-  auto x = rangeIter(rangeSize(v, V, DV));
-  return transformIter(x, [=](int n) { return v+DV*n; });
-}
