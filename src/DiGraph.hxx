@@ -41,7 +41,7 @@ class DiGraph {
 
   bool hasVertex(int u)      const { return u < s() && vex[u]; }
   bool hasEdge(int u, int v) const { return u < s() && ei(u, v) >= 0; }
-  auto edges(int u)          const { return u < s()? iterable(vto[u]) : iterable(none); }
+  auto edges(int u)          const { return u < s()? makeIter(vto[u]) : makeIter(none); }
   int degree(int u)          const { return u < s()? vto[u].size()    : 0; }
   auto vertices()      const { return filterIter(rangeIter(s()), [&](int u) { return  vex[u]; }); }
   auto nonVertices()   const { return filterIter(rangeIter(s()), [&](int u) { return !vex[u]; }); }

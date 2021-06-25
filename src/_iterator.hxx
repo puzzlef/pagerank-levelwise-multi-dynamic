@@ -125,18 +125,20 @@ class Iterable {
 
   public:
   Iterable(I ib, I ie) : ib(ib), ie(ie) {}
-  auto begin() const { return ib; }
-  auto end() const   { return ie; }
+  auto begin()  const { return ib; }
+  auto end()    const { return ie; }
+  size_t size() const { return distance(ib, ie); }
+  bool empty()  const { return ib == ie; }
 };
 
 
 template <class I>
-auto iterable(I ib, I ie) {
+auto makeIter(I ib, I ie) {
   return Iterable<I>(ib, ie);
 }
 
 template <class J>
-auto iterable(const J& x) {
+auto makeIter(const J& x) {
   using I = decltype(x.begin());
   return Iterable<I>(x.begin(), x.end());
 }
@@ -390,9 +392,9 @@ auto selectBaseIterator(int s, I0 i0, I1 i1) {
 
 template <class J0, class J1>
 auto selectBaseIter(int s, const J0& x0, const J1& x1) {
-  auto ib = selectBaseIterator(s, x0.begin(), x1.begin());
-  auto ie = selectBaseIterator(s, x0.end(), x1.end());
-  return iterable(ib, ie);
+  auto b = selectBaseIterator(s, x0.begin(), x1.begin());
+  auto e = selectBaseIterator(s, x0.end(), x1.end());
+  return makeIter(b, e);
 }
 
 
@@ -455,9 +457,9 @@ auto selectInputIterator(int s, I0 i0, I1 i1) {
 
 template <class J0, class J1>
 auto selectInputIter(int s, const J0& x0, const J1& x1) {
-  auto ib = selectInputIterator(s, x0.begin(), x1.begin());
-  auto ie = selectInputIterator(s, x0.end(), x1.end());
-  return iterable(ib, ie);
+  auto b = selectInputIterator(s, x0.begin(), x1.begin());
+  auto e = selectInputIterator(s, x0.end(), x1.end());
+  return makeIter(b, e);
 }
 
 
@@ -501,17 +503,15 @@ class TransformIterator {
 
 
 template <class I, class F>
-auto transform(I ib, I ie, F fn) {
+auto transformIter(I ib, I ie, F fn) {
   auto b = TransformIterator<I, F>(ib, fn);
   auto e = TransformIterator<I, F>(ie, fn);
-  return iterable(b, e);
+  return makeIter(b, e);
 }
 
 template <class J, class F>
-auto transform(const J& x, F fn) {
-  auto b = x.begin();
-  auto e = x.end();
-  return transform(b, e, fn);
+auto transformIter(const J& x, F fn) {
+  return transformIter(x.begin(), x.end(), fn);
 }
 
 
@@ -539,9 +539,9 @@ class FilterIterator {
 
 template <class I, class F>
 auto filterIter(I ib, I ie, F fn) {
-  auto ib = FilterIterator<I, F>(ib, ie, fn);
-  auto ie = FilterIterator<I, F>(ie, ie, fn);
-  return iterable(ib, ie);
+  auto b = FilterIterator<I, F>(ib, ie, fn);
+  auto e = FilterIterator<I, F>(ie, ie, fn);
+  return makeIter(b, e);
 }
 
 template <class J, class F>
@@ -584,13 +584,13 @@ class RangeIterator {
 
 template <class T>
 auto rangeIter(T V) {
-  auto ib = RangeIterator<T>(0);
-  auto ie = RangeIterator<T>(V);
-  return iterable(ib, ie);
+  auto b = RangeIterator<T>(0);
+  auto e = RangeIterator<T>(V);
+  return makeIter(b, e);
 }
 
 template <class T>
 auto rangeIter(T v, T V, T DV=1) {
   auto x = rangeIter(rangeSize(v, V, DV));
-  return transform(x, [=](int n) { return v+DV*n; });
+  return transformIter(x, [=](int n) { return v+DV*n; });
 }
