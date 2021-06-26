@@ -25,6 +25,12 @@ using std::get;
 // ----------
 // Helps create iterators.
 
+#ifndef PAREN_OPEN
+#define PAREN_OPEN  (
+#define PAREN_CLOSE )
+#endif
+
+
 #ifndef ITERATOR_USING
 #define ITERATOR_USING(cat, dif, val, ref, ptr) \
   using iterator_category = cat; \
@@ -58,8 +64,8 @@ using std::get;
 
 #ifndef ITERATOR_DEREF
 #define ITERATOR_DEREF(I, n, de, ie) \
-  reference operator*() { return de; } \
-  reference operator[](difference_type n) { return ie; }
+  reference operator*() const { return de; } \
+  reference operator[](difference_type n) const { return ie; }
 #endif
 
 
@@ -103,7 +109,6 @@ using std::get;
   friend I operator+(difference_type n, const I& it) { return __VA_ARGS__; }
 #endif
 
-
 #ifndef ITERATOR_ARITHMETICN
 #define ITERATOR_ARITHMETICN(I, it, n, ...) \
   friend I operator-(const I& it, difference_type n) { return __VA_ARGS__; } \
@@ -119,6 +124,14 @@ using std::get;
   friend bool operator<=(const I& l, const I& r) { return le <= re; } \
   friend bool operator> (const I& l, const I& r) { return le >  re; } \
   friend bool operator< (const I& l, const I& r) { return le <  re; }
+
+#define ITERATOR_COMPARISION_DO3(I, l, r, e0, e1, e2, e3)  \
+  friend bool operator==(const I& l, const I& r) { e0 == e1 == e2 == e3; } \
+  friend bool operator!=(const I& l, const I& r) { e0 != e1 != e2 != e3; } \
+  friend bool operator>=(const I& l, const I& r) { e0 >= e1 >= e2 >= e3; } \
+  friend bool operator<=(const I& l, const I& r) { e0 <= e1 <= e2 <= e3; } \
+  friend bool operator> (const I& l, const I& r) { e0 >  e1 >  e2 >  e3; } \
+  friend bool operator< (const I& l, const I& r) { e0 <  e1 <  e2 <  e3; }
 #endif
 
 
@@ -443,27 +456,37 @@ auto defaultValueIterator(const T& _) {
 template <class I0, class I1>
 class TernaryIterator {
   using iterator = TernaryIterator;
+  using T = typename I0::value_type;
   const bool sel;
-  I0 i0; I1 i1;
+  I0 i0;
+  I1 i1;
 
   public:
-  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, const T&, const T*)
-  TernaryIterator(bool sel, I0 i0, I1 i1) : sel(sel), is(i0, i1) {}
+  ITERATOR_USING_IC(I0, random_access_iterator_tag)
+  TernaryIterator(bool sel, I0 i0, I1 i1) : sel(sel), i0(i0), i1(i1) {}
   ITERATOR_DEREF(iterator, n, sel? *i1 : *i0, sel? i1[n] : i0[n])
   ITERATOR_PTR(iterator, sel? i1.I1::operator->() : i0.I0::operator->())
-  ITERATOR_NEXT(iterator, sel? ++i1 : ++i0, sel? --i1 : --i0)
-  ITERATOR_ADVANCE(iterator, n, sel? i1+=n : i0+=n, sel? i1-=n : i0-=n)
-  ITERATOR_ARITHMETICP(iterator, it, n, sel? it+n: )
-  ITERATOR_ARITHMETICN(iterator, it, n, it+n)
-  ITERATOR_COMPARISION(iterator, l, r, 0, 0)
+  ITERATOR_NEXTP(iterator, if (sel) { ++i1; } else { ++i0; })
+  ITERATOR_NEXTN(iterator, if (sel) { --i1; } else { --i0; })
+  ITERATOR_ADVANCEP(iterator, n, if (sel) { i1+=n; } else { i0+=n; })
+  ITERATOR_ADVANCEN(iterator, n, if (sel) { i1-=n; } else { i0-=n; })
+  ITERATOR_ARITHMETICP(iterator, it, n, it.sel? iterator(it.i0, it.i1+n) : iterator(it.i0+n, it.i1))
+  ITERATOR_ARITHMETICN(iterator, it, n, it.sel? iterator(it.i0, it.i1-n) : iterator(it.i0-n, it.i1))
+  ITERATOR_COMPARISION_DO3(iterator, l, r, if (l.sel!=r.sel) return ! PAREN_OPEN 0, 0 PAREN_CLOSE; return l.sel? l.i1, r.i1 : l.i0, r.i0)
 };
 
 
-template <class T>
-auto defaultIterator(const T& _) {
-  return DefaultIterator<T>();
+template <class I0, class I1>
+auto ternaryIterator(bool sel, I0 i0, I1 i1) {
+  return TernaryIterator<I0, I1>(sel, i0, i1);
 }
 
+template <class J0, class J1>
+auto ternaryIter(bool sel, const J0& x0, const J1& x1) {
+  auto b = ternaryIterator(sel, x0.begin(), x1.begin());
+  auto e = ternaryIterator(sel, x0.end(), x1.end());
+  return makeIter(b, e);
+}
 
 
 
@@ -471,149 +494,4 @@ auto defaultIterator(const T& _) {
 // SELECT
 // ------
 // Select iterator by index.
-
-template <class I>
-void selectInc(int s, tuple<I...>& is) {
-}
-
-template <class I0, class... I>
-class SelectIterator {
-  using iterator = SelectIterator;
-  const int sel;
-  tuple<I0, I...> is;
-
-
-  public:
-  ITERATOR_USING_IC(I0, random_access_iterator_tag)
-  SelectIterator(int sel, I0 i0, I... i)
-  : sel(sel), is(i0, ...i) {}
-
-  iterator& operator++() {
-    switch (sel) {
-      case 0: ++get<0>(is); break;
-      case 1: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-      case 0: ++get<0>(is); break;
-    }
-    return *this;
-  }
-
-  reference operator*() {
-    switch (s) {
-      default: return *id;
-      case 0: return *i0;
-      case 1: return *i1;
-    }
-  }
-
-  friend void swap(iterator& l, iterator& r) {
-    // Does this do the right thing?
-    if (l.s != r.s) return;
-    switch (l.s) {
-      default: break;
-      case 0: swap(l.i0, r.i0); break;
-      case 1: swap(l.i1, r.i1); break;
-    }
-  }
-};
-
-
-template <class I0, class I1>
-auto selectBaseIterator(int s, I0 i0, I1 i1) {
-  return Select2BaseIterator<I0, I1>(s, i0, i1);
-}
-
-template <class J0, class J1>
-auto selectBaseIter(int s, const J0& x0, const J1& x1) {
-  auto b = selectBaseIterator(s, x0.begin(), x1.begin());
-  auto e = selectBaseIterator(s, x0.end(), x1.end());
-  return makeIter(b, e);
-}
-
-
-
-
-// SELECT (INPUT)
-// --------------
-
-template <class I0, class I1>
-class Select2InputIterator : public Select2BaseIterator<I0, I1> {
-  public:
-  using iterator = Select2InputIterator;
-  using iterator_category = input_iterator_tag;
-  using value_type = typename Select2BaseIterator<I0, I1>::value_type;
-  using pointer    = typename Select2BaseIterator<I0, I1>::pointer;
-
-  protected:
-  using ID = DefaultIterator<value_type>;
-
-  public:
-  Select2InputIterator(int s, I0 i0, I1 i1)
-  : Select2BaseIterator<I0, I1>(s, i0, i1) {}
-
-  iterator& operator++() { this->Select2BaseIterator<I0, I1>::operator++(); return *this; }
-  iterator operator++(int) { auto it = *this; ++(*this); return it; }
-  // value_type operator*() const {}
-
-  pointer operator->() {
-    switch (this->s) {
-      default: return this->id.ID::operator->();
-      case 0: return this->i0.I0::operator->();
-      case 1: return this->i1.I1::operator->();
-    }
-  }
-
-  friend bool operator==(const iterator& l, const iterator& r) {
-    if (l.s != r.s) return false;
-    switch (l.s) {
-      default: return true;
-      case 0: return l.i0 == r.i0;
-      case 1: return l.i1 == r.i1;
-    }
-  }
-
-  friend bool operator!=(const iterator& l, const iterator& r) {
-    if (l.s != r.s) return true;
-    switch (l.s) {
-      default: return false;
-      case 0: return l.i0 != r.i0;
-      case 1: return l.i1 != r.i1;
-    }
-  }
-};
-
-
-template <class I0, class I1>
-auto selectInputIterator(int s, I0 i0, I1 i1) {
-  return Select2InputIterator<I0, I1>(s, i0, i1);
-}
-
-template <class J0, class J1>
-auto selectInputIter(int s, const J0& x0, const J1& x1) {
-  auto b = selectInputIterator(s, x0.begin(), x1.begin());
-  auto e = selectInputIterator(s, x0.end(), x1.end());
-  return makeIter(b, e);
-}
-
-
-
-
-/*
-  reference operator[](difference_type i) {
-    switch (s) {
-      default:
-      case 0: return i0[i];
-      case 1: return i1[i];
-      case 2: return i2[i];
-      case 3: return i3[i];
-      case 4: return i4[i];
-      case 5: return i5[i];
-      case 6: return i6[i];
-      case 7: return i7[i];
-    }
-  }
-*/
+// Can be done using tuples.

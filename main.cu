@@ -14,7 +14,7 @@ using namespace std;
 void runExpt(const string& data, bool show) {
   auto ix = rangeIter(10);
   auto iy = transformIter(ix, [](int n) { return n*2; });
-  auto iz = selectInputIter(!show, ix, iy);
+  auto iz = ternaryIter(!show, ix, iy);
   auto id = defaultIterator(int());
   printf("id: %zu\n", sizeof(id));
   printf("ix: %zu\n", sizeof(ix));
