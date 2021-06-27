@@ -5,6 +5,7 @@
 #include "edges.hxx"
 #include "csr.hxx"
 #include "snap.hxx"
+#include "mtx.hxx"
 #include "copy.hxx"
 #include "transpose.hxx"
 #include "components.hxx"
