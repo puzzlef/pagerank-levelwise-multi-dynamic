@@ -3,10 +3,12 @@
 #include <unordered_map>
 #include <iterator>
 #include <algorithm>
+#include <functional>
 
 using std::vector;
 using std::unordered_map;
 using std::iterator_traits;
+using std::hash;
 using std::find;
 using std::find_if;
 using std::lower_bound;

@@ -11,6 +11,7 @@
 #include "components.hxx"
 #include "blockgraph.hxx"
 #include "topologicalSort.hxx"
+#include "identicals.hxx"
 #include "deadEnds.hxx"
 #include "ranks.hxx"
 #include "pagerank.hxx"
