@@ -5,7 +5,6 @@
 #include "edges.hxx"
 #include "csr.hxx"
 #include "components.hxx"
-#include "blockgraph.hxx"
 #include "topologicalSort.hxx"
 #include "pagerank.hxx"
 #include "pagerankMonolithic.hxx"
