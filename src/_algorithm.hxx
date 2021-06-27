@@ -162,3 +162,66 @@ auto setDifference(J&& x, K&& y) {
   vector<T> a; setDifference(a, x, y);
   return a;
 }
+
+
+
+
+// TO-*
+// ----
+
+template <class T, class I>
+void toVector(vector<T>& a, I ib, I ie) {
+  a.clear();
+  for (I it=ib; it!=ie; ++it)
+    a.push_back(*it);;
+}
+
+template <class I>
+auto toVector(I ib, I ie) {
+  using T = typename I::value_type;
+  vector<T> a; toVector(a, ib, ie);
+  return a;
+}
+
+template <class T, class J>
+void toVector(vector<T>& a, const J& x) {
+  toVector(a, x.begin(), x.end());
+}
+
+template <class J>
+void toVector(const J& x) {
+  return toVector(x.begin(), x.end());
+}
+
+
+
+
+// HASH-VALUE
+// ----------
+
+template <class T, class I>
+size_t hashValue(vector<T>& vs, I ib, I ie) {
+  size_t a = 0;
+  toVector(vs, ib, ie);
+  sort(vs.begin(), vs.end());
+  for (const T& v : vs)
+    a ^= hash<T>{}(v) + 0x9e3779b9 + (a<<6) + (a>>2); // from boost::hash_combine
+  return a;
+}
+
+template <class I>
+size_t hashValue(I ib, I ie) {
+  using T = typename I::value_type;
+  vector<T> vs;
+  return hashValue(vs, ib, ie);
+}
+
+template <class T, class J>
+size_t hashValue(vector<T>& vs, const J& x) {
+  return hashValue(vs, x.begin(), x.end());
+}
+
+template <class J>
+size_t hashValue(const J& x) {
+  return hashValue(x.begin(), x.end());
+}
