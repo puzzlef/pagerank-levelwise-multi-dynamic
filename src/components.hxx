@@ -14,7 +14,7 @@ using std::vector;
 
 template <class G, class H>
 auto components(const G& x, const H& xt) {
-  vector<vector<int>> a;
+  vector2d<int> a;
   // original dfs
   auto vis = createContainer(x, bool());
   vector<int> vs;
@@ -39,7 +39,7 @@ auto components(const G& x, const H& xt) {
 // Get component id of each vertex.
 
 template <class G>
-auto componentIds(const G& x, const vector<vector<int>>& comps) {
+auto componentIds(const G& x, const vector2d<int>& comps) {
   auto a = createContainer(x, int()); int i = 0;
   for (const auto& comp : comps) {
     for (int u : comp)

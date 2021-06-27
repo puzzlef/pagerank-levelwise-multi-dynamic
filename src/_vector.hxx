@@ -106,8 +106,8 @@ void append(vector<T>& a, J&& vs) {
 // ----
 
 template <class T, class F>
-auto joinIf(const vector<vector<T>>& xs, F fn) {
-  vector<vector<T>> a;
+auto joinIf(const vector2d<T>& xs, F fn) {
+  vector2d<T> a;
   for (const auto& x : xs) {
     auto& b = a.back();
     if (a.empty() || !fn(b, x)) a.push_back(x);
@@ -117,12 +117,12 @@ auto joinIf(const vector<vector<T>>& xs, F fn) {
 }
 
 template <class T>
-auto joinUntilSize(const vector<vector<T>>& xs, int N) {
+auto joinUntilSize(const vector2d<T>& xs, int N) {
   return joinIf(xs, [&](const auto& b, const auto& x) { return b.size()<N; });
 }
 
 template <class T>
-auto join(const vector<vector<T>>& xs) {
+auto join(const vector2d<T>& xs) {
   vector<T> a;
   for (const auto& x : xs)
     a.insert(a.end(), x.begin(), x.end());
@@ -136,8 +136,8 @@ auto join(const vector<vector<T>>& xs) {
 // -------
 
 template <class T, class J, class F>
-auto joinAtIf(const vector<vector<T>>& xs, J&& is, F fn) {
-  vector<vector<T>> a;
+auto joinAtIf(const vector2d<T>& xs, J&& is, F fn) {
+  vector2d<T> a;
   for (int i : is) {
     auto& b = a.back();
     if (a.empty() || !fn(b, xs[i])) a.push_back(xs[i]);
@@ -147,12 +147,12 @@ auto joinAtIf(const vector<vector<T>>& xs, J&& is, F fn) {
 }
 
 template <class T, class J>
-auto joinAtUntilSize(const vector<vector<T>>& xs, J&& is, int N) {
+auto joinAtUntilSize(const vector2d<T>& xs, J&& is, int N) {
   return joinAtIf(xs, is, [&](const auto& b, const auto& x) { return b.size()<N; });
 }
 
 template <class T, class J>
-auto joinAt(const vector<vector<T>>& xs, J&& is) {
+auto joinAt(const vector2d<T>& xs, J&& is) {
   vector<T> a;
   for (int i : is)
     a.insert(a.end(), xs[i].begin(), xs[i].end());
