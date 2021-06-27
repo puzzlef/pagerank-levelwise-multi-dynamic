@@ -217,11 +217,6 @@ auto sizedIterable(const J& x) {
 // SIZE
 // ----
 
-template <class T>
-int size(const vector<T>& x) {
-  return x.size();
-}
-
 template <class I>
 int size(const SizedIterable<I>& x) {
   return x.size();
