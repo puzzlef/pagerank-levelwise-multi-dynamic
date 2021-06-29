@@ -85,6 +85,22 @@ void eraseIndex(vector<T>& a, int i, int I) {
 
 
 
+// INSERT
+// ------
+
+template <class T>
+void insertIndex(vector<T>& a, int i, const T& v) {
+  a.insert(a.begin()+i, v);
+}
+
+template <class T>
+void insertIndex(vector<T>& a, int i, int n, const T& v) {
+  a.insert(a.begin()+i, n, v);
+}
+
+
+
+
 // APPEND
 // ------
 
