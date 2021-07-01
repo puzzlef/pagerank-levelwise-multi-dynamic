@@ -1,4 +1,5 @@
 #include <cmath>
+#include <climits>
 #include <random>
 #include <vector>
 #include <cstdio>
@@ -44,13 +45,13 @@ void runPagerankBatch(const G& x, const H& xt, const vector<float>& ranksOld, in
   auto e2 = l1Norm(a2.ranks, a1.ranks);
   print(y); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankNvgraph [dynamic]\n", a2.time, a2.iterations, e2);
 
-  // Find static pagerank using standard algorithm.
-  auto a3 = pagerankMonolithic(yt, initStatic, {REPEAT});
+  // Find static pagerank using standard algorithm (min-compute-size=MAX => monolithic-opt).
+  auto a3 = pagerankLevelwise(y, yt, initStatic, {REPEAT, INT_MAX});
   auto e3 = l1Norm(a3.ranks, a1.ranks);
   print(y); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [static]\n", a3.time, a3.iterations, e3);
 
-  // Find dynamic pagerank using standard algorithm.
-  auto a4 = pagerankMonolithic(yt, initDynamic, {REPEAT});
+  // Find dynamic pagerank using standard algorithm (min-compute-size=MAX => monolithic-opt).
+  auto a4 = pagerankLevelwise(x, xt, y, yt, initDynamic, {REPEAT, INT_MAX});
   auto e4 = l1Norm(a4.ranks, a1.ranks);
   print(y); printf(" [%09.3f ms; %03d iters.] [%.4e err.] pagerankMonolithic [dynamic]\n", a4.time, a4.iterations, e4);
 

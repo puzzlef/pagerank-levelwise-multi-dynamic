@@ -20,11 +20,13 @@ template <class G, class H, class C>
 auto pagerankWaveSizes(const G& w, const H& wt, const C& wcs, const G& x, const H& xt, const C& xcs) {
   int W = wcs.size();
   int X = xcs.size();
+  auto wch = componentsHash(wcs);
+  auto xch = componentsHash(xcs);
   auto b = blockgraph(x, xcs);
   vector<bool> dirty(X);
   for (int u : b.vertices()) {
     if (dirty[u]) continue;
-    if (findIndex(wcs, xcs[u])>=0 && componentsEqual(w, wt, xcs[u], x, xt, xcs[u])) continue;
+    if (findIndex(wch, xch[u])>=0 && componentsEqual(w, wt, xcs[u], x, xt, xcs[u])) continue;
     dfsDo(b, u, [&](int v) { dirty[v] = true; });
   }
   vector<int> a(X);
@@ -36,14 +38,14 @@ auto pagerankWaveSizes(const G& w, const H& wt, const C& wcs, const G& x, const 
 }
 
 
-template <class H, class C>
-auto pagerankGroupComponents(const H& xt, const C& cs, const vector<int>& ws) {
+template <class H, class C, class T>
+auto pagerankGroupComponents(const H& xt, const C& cs, const vector<int>& ws, const PagerankOptions<T>& o) {
   vector<int> is, js;
   for (int i=0; i<cs.size(); i++) {
     if (ws[i]>=0) is.push_back(i);
     else js.push_back(i);
   }
-  auto a = joinAtUntilSize(cs, is, MIN_COMPUTE_SIZE_PR);
+  auto a = joinAtUntilSize(cs, is, o.minComputeSize);
   a.push_back(joinAt(cs, js));
   auto fp = [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PR; };
   for (auto& c : a) partition(c.begin(), c.end(), fp);
@@ -98,7 +100,7 @@ PagerankResult<T> pagerankLevelwise(const G& w, const H& wt, const G& x, const H
   auto wcs = sortedComponents(w, wt);
   auto xcs = sortedComponents(x, xt);
   auto ns = pagerankWaveSizes(w, wt, wcs, x, xt, xcs);
-  auto cs = pagerankGroupComponents(xt, xcs, ns);
+  auto cs = pagerankGroupComponents(xt, xcs, ns, o);
   auto ws = pagerankGroupWaves(xt, cs);
   auto ks = join(cs);
   auto vfrom = sourceOffsets(xt, ks);

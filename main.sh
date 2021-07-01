@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-src="pagerank-levelwise-cuda-static-vs-dynamic-with-mtx-insertions"
+src="pagerank-cuda-optimized-dynamic-monolithic-vs-levelwise-with-mtx-insertions"
 out="/home/resources/Documents/subhajit/$src.log"
 ulimit -s unlimited
 printf "" > "$out"
