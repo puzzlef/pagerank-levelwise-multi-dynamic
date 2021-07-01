@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cuda_runtime.h>
 #include <cuda_profiler_api.h>
-#include "_main.hxx"
+#include "_cmath.hxx"
 
 using std::min;
 using std::fprintf;

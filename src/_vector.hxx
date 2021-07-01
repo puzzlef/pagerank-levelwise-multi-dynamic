@@ -25,6 +25,33 @@ using vector3d = vector<vector<vector<T>>>;
 
 
 
+// SIZE
+// ----
+
+template <class T>
+size_t size(const vector<T>& x) {
+  return x.size();
+}
+
+template <class T>
+size_t size2d(const vector2d<T>& x) {
+  size_t a = 0;
+  for (const auto& v : x)
+    a += size(v);
+  return a;
+}
+
+template <class T>
+size_t size3d(const vector3d<T>& x) {
+  size_t a = 0;
+  for (const auto& v : x)
+    a += size2d(v);
+  return a;
+}
+
+
+
+
 // REORDER
 // -------
 // Ref: https://stackoverflow.com/a/22183350/1413259
@@ -53,6 +80,22 @@ void eraseIndex(vector<T>& a, int i) {
 template <class T>
 void eraseIndex(vector<T>& a, int i, int I) {
   a.erase(a.begin()+i, a.begin()+I);
+}
+
+
+
+
+// INSERT
+// ------
+
+template <class T>
+void insertIndex(vector<T>& a, int i, const T& v) {
+  a.insert(a.begin()+i, v);
+}
+
+template <class T>
+void insertIndex(vector<T>& a, int i, int n, const T& v) {
+  a.insert(a.begin()+i, n, v);
 }
 
 
