@@ -201,12 +201,18 @@ function main(cmd, log, out) {
     case 'short-csv-dir':
       for (var [graph, rows] of data) {
         var rows = processShortCsv(new Map([[graph, rows]]));
-        writeCsv(path.join(out, graph+'.csv'), rows);
+        writeCsv(path.join(out, graph+'.short.csv'), rows);
       }
       break;
     case 'short-log':
       var text = processShortLog(data);
       writeFile(out, text);
+      break;
+    case 'short-log-dir':
+      for (var [graph, rows] of data) {
+        var text = processShortLog(data);
+        writeFile(path.join(out, graph+'.short.txt'), text);
+      }
       break;
     default:
       console.error(`error: "${cmd}"?`);
