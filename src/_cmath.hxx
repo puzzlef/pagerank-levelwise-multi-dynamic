@@ -8,6 +8,17 @@ using std::ceil;
 
 
 
+// COALESCE
+// --------
+
+template <class T>
+T coalesce(T x, T d=T()) {
+  return x!=T()? x : d;
+}
+
+
+
+
 // CEIL-DIV
 // --------
 
@@ -27,4 +38,27 @@ T ceilDiv(T x, T y) {
 template <typename T>
 int sgn(T x) {
   return (T() < x) - (x < T());
+}
+
+
+
+
+// POW-2
+// -----
+
+template <class T>
+constexpr bool isPow2(T x) noexcept {
+  return !(x & (x-1));
+}
+
+
+template <class T>
+constexpr T prevPow2(T x) noexcept {
+  return 1 << T(log2(x));
+}
+
+
+template <class T>
+constexpr T nextPow2(T x) noexcept {
+  return 1 << T(ceil(log2(x)));
 }

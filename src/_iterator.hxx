@@ -1,11 +1,9 @@
 #pragma once
-#include <utility>
 #include <cstddef>
 #include <iterator>
 #include <unordered_map>
 #include <algorithm>
 
-using std::tuple;
 using std::ptrdiff_t;
 using std::input_iterator_tag;
 using std::output_iterator_tag;
@@ -16,7 +14,6 @@ using std::iterator_traits;
 using std::unordered_map;
 using std::distance;
 using std::max;
-using std::get;
 
 
 
@@ -270,6 +267,129 @@ auto sliceIter(const J& x, int i, int I) {
 
 
 
+// POINTER
+// -------
+
+template <class T>
+class PointerIterator {
+  using iterator = PointerIterator;
+  T *it;
+
+  public:
+  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, T&, T*)
+  PointerIterator(T *it) : it(it) {}
+  ITERATOR_DEREF(iterator, i, *it, it[i])
+  ITERATOR_PTR(iterator, &it)
+  ITERATOR_NEXT(iterator, ++it, --it)
+  ITERATOR_ADVANCE(iterator, i, it += i, it -= i)
+  ITERATOR_ARITHMETICP(iterator, a, n, iterator(a.it+n))
+  ITERATOR_ARITHMETICN(iterator, a, n, iterator(a.it-n))
+  ITERATOR_COMPARISION(iterator, a, b, a.it, b.it)
+};
+
+template <class T>
+class ConstPointerIterator {
+  using iterator = ConstPointerIterator;
+  const T* it;
+
+  public:
+  ITERATOR_USING(random_access_iterator_tag, ptrdiff_t, T, const T&, const T*)
+  ConstPointerIterator(const T* it) : it(it) {}
+  ITERATOR_DEREF(iterator, i, *it, it[i])
+  ITERATOR_PTR(iterator, &it)
+  ITERATOR_NEXT(iterator, ++it, --it)
+  ITERATOR_ADVANCE(iterator, i, it += i, it -= i)
+  ITERATOR_ARITHMETICP(iterator, a, n, iterator(a.it+n))
+  ITERATOR_ARITHMETICN(iterator, a, n, iterator(a.it-n))
+  ITERATOR_COMPARISION(iterator, a, b, a.it, b.it)
+};
+
+
+template <class T>
+auto pointerIterator(T* it) {
+  return PointerIterator<T>(it);
+}
+
+template <class T>
+auto pointerIterator(const T* it) {
+  return ConstPointerIterator<T>(it);
+}
+
+template <class T>
+auto cpointerIterator(const T* it) {
+  return ConstPointerIterator<T>(it);
+}
+
+
+template <class T>
+auto pointerIter(T* ib, T* ie) {
+  auto b = PointerIterator<T>(ib);
+  auto e = PointerIterator<T>(ie);
+  return makeIter(b, e);
+}
+
+template <class T>
+auto pointerIter(const T* ib, const T* ie) {
+  auto b = ConstPointerIterator<T>(ib);
+  auto e = ConstPointerIterator<T>(ie);
+  return makeIter(b, e);
+}
+
+template <class T>
+auto cpointerIter(const T* ib, const T* ie) {
+  auto b = ConstPointerIterator<T>(ib);
+  auto e = ConstPointerIterator<T>(ie);
+  return makeIter(b, e);
+}
+
+template <class J>
+auto pointerIter(J& x, int i, int I) {
+  return pointerIter(x.data()+i, x.data()+I);
+}
+
+template <class J>
+auto pointerIter(J& x, int N) {
+  return pointerIter(x.data(), x.data()+N);
+}
+
+template <class J>
+auto pointerIter(J& x) {
+  return pointerIter(x.data(), x.data()+x.size());
+}
+
+template <class J>
+auto pointerIter(const J& x, int i, int I) {
+  return pointerIter(x.data()+i, x.data()+I);
+}
+
+template <class J>
+auto pointerIter(const J& x, int N) {
+  return pointerIter(x.data(), x.data()+N);
+}
+
+template <class J>
+auto pointerIter(const J& x) {
+  return pointerIter(x.data(), x.data()+x.size());
+}
+
+template <class J>
+auto cpointerIter(const J& x, int i, int I) {
+  return cpointerIter(x.data()+i, x.data()+I);
+}
+
+template <class J>
+auto cpointerIter(const J& x, int N) {
+  return cpointerIter(x.data(), x.data()+N);
+}
+
+template <class J>
+auto cpointerIter(const J& x) {
+  return cpointerIter(x.data(), x.data()+x.size());
+}
+
+
+
+
 // TRANSFORM
 // ---------
 
@@ -448,17 +568,17 @@ auto defaultValueIterator(const T& _) {
 // -------
 // Select iterator by boolean.
 
-template <class I0, class I1>
+template <class I1, class I0>
 class TernaryIterator {
   using iterator = TernaryIterator;
-  using T = typename I0::value_type;
+  using T = typename I1::value_type;
   const bool sel;
-  I0 i0;
   I1 i1;
+  I0 i0;
 
   public:
-  ITERATOR_USING_IC(I0, random_access_iterator_tag)
-  TernaryIterator(bool sel, I0 i0, I1 i1) : sel(sel), i0(i0), i1(i1) {}
+  ITERATOR_USING_IC(I1, random_access_iterator_tag)
+  TernaryIterator(bool sel, I1 i1, I0 i0) : sel(sel), i1(i1), i0(i0) {}
   ITERATOR_DEREF(iterator, n, sel? *i1 : *i0, sel? i1[n] : i0[n])
   ITERATOR_PTR(iterator, sel? i1.I1::operator->() : i0.I0::operator->())
   ITERATOR_NEXTP(iterator, if (sel) { ++i1; } else { ++i0; })
@@ -471,15 +591,15 @@ class TernaryIterator {
 };
 
 
-template <class I0, class I1>
-auto ternaryIterator(bool sel, I0 i0, I1 i1) {
-  return TernaryIterator<I0, I1>(sel, i0, i1);
+template <class I1, class I0>
+auto ternaryIterator(bool sel, I1 i1, I0 i0) {
+  return TernaryIterator<I1, I0>(sel, i1, i0);
 }
 
-template <class J0, class J1>
-auto ternaryIter(bool sel, const J0& x0, const J1& x1) {
-  auto b = ternaryIterator(sel, x0.begin(), x1.begin());
-  auto e = ternaryIterator(sel, x0.end(), x1.end());
+template <class J1, class J0>
+auto ternaryIter(bool sel, const J1& x1, const J0& x0) {
+  auto b = ternaryIterator(sel, x1.begin(), x0.begin());
+  auto e = ternaryIterator(sel, x1.end(), x0.end());
   return makeIter(b, e);
 }
 

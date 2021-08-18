@@ -31,7 +31,7 @@ class DiGraph {
   // Cute helpers
   private:
   int s() const { return vto.size(); }
-  int ei(int u, int v) const { return findIndex(vto[u], v); }
+  int ei(int u, int v) const { return findEqIndex(vto[u], v); }
 
   // Read operations
   public:

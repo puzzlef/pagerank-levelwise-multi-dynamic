@@ -7,18 +7,20 @@ using std::vector;
 
 
 template <class G>
-auto deadEnds(const G& x) {
-  vector<int> a;
-  for (int u : x.vertices())
-    if (x.degree(u)==0) a.push_back(u);
-  return a;
+bool isDeadEnd(const G& x, int u) {
+  return x.degree(u) == 0;
 }
 
 
+template <class G, class F>
+void deadEndsForEach(const G& x, F fn) {
+  for (int u : x.vertices())
+    if (isDeadEnd(x, u)) fn(u);
+}
 
 
 template <class G>
-void loopDeadEnds(G& a) {
-  for (int u : a.vertices())
-    if (a.degree(u)==0) a.addEdge(u, u);
+auto deadEnds(const G& x) {
+  vector<int> a; deadEndsForEach(x, [&](int u) { a.push_back(u); });
+  return a;
 }

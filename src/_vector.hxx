@@ -565,7 +565,7 @@ V l1NormOmp(const vector<T>& x, const vector<U>& y, int i, int N, V a=V()) {
 template <class T, class U, class V=T>
 V l2Norm(const T *x, const U *y, int N, V a=V()) {
   for (int i=0; i<N; i++)
-    a += x[i]*x[i] - y[i]*y[i];
+    a += (x[i] - y[i]) * (x[i] - y[i]);
   return sqrt(a);
 }
 
@@ -584,7 +584,7 @@ template <class T, class U, class V=T>
 V l2NormOmp(const T *x, const U *y, int N, V a=V()) {
   #pragma omp parallel for schedule(static,4096) reduction(+:a)
   for (int i=0; i<N; i++)
-    a += x[i]*x[i] - y[i]*y[i];
+    a += (x[i] - y[i]) * (x[i] - y[i]);
   return sqrt(a);
 }
 
@@ -678,4 +678,44 @@ void multiplyOmp(vector<T>& a, const vector<U>& x, const vector<V>& y) {
 template <class T, class U, class V>
 void multiplyOmp(vector<T>& a, const vector<U>& x, const vector<V>& y, int i, int N) {
   multiplyOmp(a.data()+i, x.data()+i, y.data()+i, N);
+}
+
+
+
+
+// MULTIPLY-VALUE
+// --------------
+
+template <class T, class U, class V>
+void multiplyValue(T *a, const U *x, const V& y, int N) {
+  for (int i=0; i<N; i++)
+    a[i] = x[i] * y;
+}
+
+template <class T, class U, class V>
+void multiplyValue(vector<T>& a, const vector<U>& x, const V& y) {
+  multiplyValue(a.data(), x.data(), y, int(x.size()));
+}
+
+template <class T, class U, class V>
+void multiplyValue(vector<T>& a, const vector<U>& x, const V& y, int i, int N) {
+  multiplyValue(a.data()+i, x.data()+i, y, N);
+}
+
+
+template <class T, class U, class V>
+void multiplyValueOmp(T *a, const U *x, const V& y, int N) {
+  #pragma omp parallel for schedule(static,4096)
+  for (int i=0; i<N; i++)
+    a[i] = x[i] * y;
+}
+
+template <class T, class U, class V>
+void multiplyValueOmp(vector<T>& a, const vector<U>& x, const V& y) {
+  multiplyValueOmp(a.data(), x.data(), y, int(x.size()));
+}
+
+template <class T, class U, class V>
+void multiplyValueOmp(vector<T>& a, const vector<U>& x, const V& y, int i, int N) {
+  multiplyValueOmp(a.data()+i, x.data()+i, y, N);
 }
