@@ -25,6 +25,7 @@ struct None {
 
 // TEMPLATE-TYPE
 // -------------
+// For template classes in template :).
 
 #ifndef tclass0
 #define tclass0 template <> class

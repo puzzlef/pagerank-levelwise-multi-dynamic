@@ -10,6 +10,7 @@ using std::ceil;
 
 // COALESCE
 // --------
+// Similar to JavaScript coalescing || operator.
 
 template <class T>
 T coalesce(T x, T d=T()) {
@@ -21,6 +22,7 @@ T coalesce(T x, T d=T()) {
 
 // CEIL-DIV
 // --------
+// For kernel launch calculation.
 
 template <class T>
 T ceilDiv(T x, T y) {

@@ -16,6 +16,7 @@ using std::make_pair;
 
 // ADJUST-RANKS
 // ------------
+// For calculating inital ranks for incremental/dynamic pagerank.
 
 template <class T, class J>
 void adjustRanks(vector<T>& a, const vector<T>& r, J&& ks0, J&& ks1, T radd, T rmul, T rset) {
@@ -37,6 +38,7 @@ auto adjustRanks(int N, const vector<T>& r, J&& ks0, J&& ks1, T radd, T rmul, T 
 
 // CHANGED-VERTICES
 // ----------------
+// Find vertices with edges added/removed.
 
 template <class G, class F>
 void changedVerticesForEach(const G& x, const G& y, F fn) {
@@ -47,7 +49,7 @@ void changedVerticesForEach(const G& x, const G& y, F fn) {
 template <class G, class H, class F>
 void changedVerticesForEach(const G& x, const H& xt, const G& y, const H& yt, F fn) {
   for (int u : y.vertices())
-    if (!x.hasVertex(u) || !verticesEqual(x, xt, u, y, yt, u)) fn(u);
+    if (!x.hasVertex(u) || !verticesEqual(x, xt, u, y, yt, u)) fn(u);  // both ways
 }
 
 template <class G>
@@ -67,13 +69,14 @@ auto changedVertices(const G& x, const H& xt, const G& y, const H& yt) {
 
 // AFFECTED-VERTICES
 // -----------------
+// Find vertices reachable from changed vertices.
 
 template <class G, class F>
 void affectedVerticesForEach(const G& x, const G& y, F fn) {
   auto visx = createContainer(x, bool());
   auto visy = createContainer(y, bool());
-  auto fny  = [&](int u) { if (!visx[u]) fn(u); };
-  changedVerticesForEach(x, y, [&](int u) { dfsDoLoop(visx, x, u, fn); });
+  auto fny  = [&](int u) { if (u>=visx.size() || !visx[u]) fn(u); };  // check bounds!
+  changedVerticesForEach(x, y, [&](int u) { if (x.hasVertex(u)) dfsDoLoop(visx, x, u, fn); });
   changedVerticesForEach(x, y, [&](int u) { dfsDoLoop(visy, y, u, fny); });
 }
 
@@ -100,6 +103,7 @@ auto affectedVertices(const G& x, const H& xt, const G& y, const H& yt) {
 
 // DYNAMIC-VERTICES
 // ----------------
+// Find affected, unaffected vertices (vertices, no. affected).
 
 template <class G, class FA>
 auto dynamicVerticesBy(const G& y, FA fa) {
@@ -107,8 +111,6 @@ auto dynamicVerticesBy(const G& y, FA fa) {
   fa([&](int u) { a.push_back(u); aff.insert(u); });
   for (int u : y.vertices())
     if (aff.count(u)==0) a.push_back(u);
-  // printf("dynamicVerticesBy: aff: %d org: %d\n", aff.size(), a.size()-aff.size());
-  // printf("dynamicVerticesBy: "); print(a); printf("\n");
   return make_pair(a, aff.size());
 }
 
