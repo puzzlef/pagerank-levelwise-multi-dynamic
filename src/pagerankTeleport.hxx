@@ -20,7 +20,7 @@ template <class T>
 T pagerankTeleportContribution(const vector<T>& r, const vector<int>& vfrom, const vector<int>& efrom, const vector<int>& vdata, int N, T p) {
   T a = (1-p)/N;
   for (int u=0; u<N; u++)
-    if (vdata[u] == 0) a += p*r[u]/N;
+    if (vdata[u]==0) a += p*r[u]/N;
   return a;
 }
 
@@ -29,13 +29,15 @@ template <class T>
 int pagerankTeleportLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, const vector<int>& vdata, int i, int n, int N, T p, T E, int L) {
   int l = 1;
   for (; l<L; l++) {
+    if (l==1) multiply(c, r, f, 0, N);
+    else      multiply(c, r, f, i, n);
     T c0 = pagerankTeleportContribution(r, vfrom, efrom, vdata, N, p);
-    multiply(c, r, f, i, n);
     pagerankCalculate(a, c, vfrom, efrom, i, n, c0);
-    T el = l1Norm(a, r, i, n);
+    T el = l1Norm(a, r, 0, N); // i, n
     if (el < E) break;
     swap(a, r);
   }
+  // printf("a%d: ", l); println(a);
   return l;
 }
 

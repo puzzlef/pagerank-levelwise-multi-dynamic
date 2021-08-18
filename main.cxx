@@ -53,14 +53,20 @@ void runPagerankBatch(const string& data, int repeat, int original, int update) 
   adjustRanks(s3, r3, ksOld, ks, 0.0f, float(ksOld.size())/ks.size(), 1.0f/ks.size());
 
   // Find pagerank by teleporting to a random vertex from every dead end.
+  // printf("r0: "); print(r0); printf("\n");
+  // printf("s0: "); print(s0); printf("\n");
   auto b0 = pagerankTeleport(y, init, o);
   printRow(y, b0, b0, "pagerankTeleport (static)");
   auto c0 = pagerankTeleport(y, &s0, o);
   printRow(y, b0, c0, "pagerankTeleport (incremental)");
   auto d0 = pagerankTeleportDynamic(x, y, &s0, o);
   printRow(y, b0, d0, "pagerankTeleport (dynamic)");
+  // printf("c0: "); print(c0.ranks); printf("\n");
+  // printf("d0: "); print(d0.ranks); printf("\n");
 
   // Find pagerank by self-looping dead ends.
+  // printf("r1: "); print(r1); printf("\n");
+  // printf("s1: "); print(s1); printf("\n");
   auto b1 = pagerankLoop(y, init, o);
   printRow(y, b1, b1, "pagerankLoop (static)");
   auto c1 = pagerankLoop(y, &s1, o);
@@ -69,6 +75,8 @@ void runPagerankBatch(const string& data, int repeat, int original, int update) 
   printRow(y, b1, d1, "pagerankLoop (dynamic)");
 
   // Find pagerank by self-looping all vertices.
+  // printf("r2: "); print(r2); printf("\n");
+  // printf("s2: "); print(s2); printf("\n");
   auto b2 = pagerankLoopAll(y, init, o);
   printRow(y, b2, b2, "pagerankLoopAll (static)");
   auto c2 = pagerankLoopAll(y, &s2, o);
@@ -77,6 +85,8 @@ void runPagerankBatch(const string& data, int repeat, int original, int update) 
   printRow(y, b2, d2, "pagerankLoopAll (dynamic)");
 
   // Find pagerank by removing dead ends initially, and calculating their ranks after convergence.
+  // printf("r3: "); print(r3); printf("\n");
+  // printf("s3: "); print(s3); printf("\n");
   auto b3 = pagerankRemove(y, init, o);
   printRow(y, b3, b3, "pagerankRemove (static)");
   auto c3 = pagerankRemove(y, &s3, o);

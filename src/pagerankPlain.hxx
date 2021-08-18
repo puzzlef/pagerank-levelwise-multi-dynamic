@@ -36,12 +36,14 @@ int pagerankPlainLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>&
   T c0 = (1-p)/N;
   int l = 1;
   for (; l<L; l++) {
-    multiply(c, r, f, 0, N); // i, n
-    pagerankCalculate(a, c, vfrom, efrom, 0, N, c0); // i, n
+    if (l==1) multiply(c, r, f, 0, N);
+    else      multiply(c, r, f, i, n);
+    pagerankCalculate(a, c, vfrom, efrom, i, n, c0);
     T el = l1Norm(a, r, 0, N); // i, n
     if (el < E) break;
     swap(a, r);
   }
+  // printf("a%d: ", l); println(a);
   return l;
 }
 
@@ -58,10 +60,9 @@ PagerankResult<T> pagerankPlainCore(const H& xt, const J& ks, int i, int n, FL f
   auto vdata = vertexData(xt, ks);
   vector<T> a(N), r(N), c(N), f(N);
   float t = measureDurationMarked([&](auto mark) {
-    fill(a, T());
     if (q) r = compressContainer(xt, *q, ks);
     else fill(r, T(1)/N);
-    multiply(c, r, f, 0, N);
+    copy(a, r);
     mark([&] { pagerankFactor(f, vdata, 0, N, p); });
     mark([&] { l = fl(a, r, c, f, vfrom, efrom, vdata, i, n, N, p, E, L); }); // E*n/N
   }, o.repeat);

@@ -107,6 +107,8 @@ auto dynamicVerticesBy(const G& y, FA fa) {
   fa([&](int u) { a.push_back(u); aff.insert(u); });
   for (int u : y.vertices())
     if (aff.count(u)==0) a.push_back(u);
+  // printf("dynamicVerticesBy: aff: %d org: %d\n", aff.size(), a.size()-aff.size());
+  // printf("dynamicVerticesBy: "); print(a); printf("\n");
   return make_pair(a, aff.size());
 }
 
