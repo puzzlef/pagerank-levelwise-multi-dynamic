@@ -14,4 +14,5 @@ g++ -std=c++17 -O3 main.cxx
 stdbuf --output=L ./a.out data/min1c1l.txt 1 2 2  2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out data/min2c1l.txt 1 5 2  2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out data/min3c3l.txt 1 13 5 2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out data/min8c1l.txt 1 8 5  2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out data/min8c1l.txt 1 12 1 2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out data/min8c.txt 1 9 1    2>&1 | tee -a "$out"
