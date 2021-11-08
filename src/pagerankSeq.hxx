@@ -63,8 +63,8 @@ T pagerankError(const vector<T>& x, const vector<T>& y, int i, int N, int EF) {
 // ------------
 // For Monolithic / Levelwise PageRank.
 
-template <class H, class J, class FL, class T=float>
-PagerankResult<T> pagerankSeq(const H& xt, const J&& ks, int i, int n, FL fl, const vector<T> *q, PagerankOptions<T> o) {
+template <class H, class J, class M, class FL, class T=float>
+PagerankResult<T> pagerankSeq(const H& xt, const J&& ks, int i, const M&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
   int  N  = xt.order();
   T    p  = o.damping;
   T    E  = o.tolerance;
@@ -76,12 +76,11 @@ PagerankResult<T> pagerankSeq(const H& xt, const J&& ks, int i, int n, FL fl, co
   vector<T> a(N), r(N), c(N), f(N), qc;
   if (q) qc = compressContainer(xt, *q, ks);
   float t = measureDurationMarked([&](auto mark) {
-    if (N==0 || n==0) return;  // skip if nothing to do!
-    if (q) copy(r, qc);        // copy old ranks (qc), if given
+    if (q) copy(r, qc);    // copy old ranks (qc), if given
     else fill(r, T(1)/N);
     copy(a, r);
     mark([&] { pagerankFactor(f, vdata, 0, N, p); multiply(c, a, f, 0, N); });  // calculate factors (f) and contributions (c)
-    mark([&] { l = fl(a, r, c, f, vfrom, efrom, i, n, N, p, E, L, EF); });      // calculate ranks of vertices
+    mark([&] { l = fl(a, r, c, f, vfrom, efrom, i, ns, N, p, E, L, EF); });     // calculate ranks of vertices
   }, o.repeat);
   return {decompressContainer(xt, a, ks), l, t};
 }
