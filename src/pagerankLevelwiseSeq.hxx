@@ -7,7 +7,8 @@
 #include "components.hxx"
 #include "topologicalSort.hxx"
 #include "pagerank.hxx"
-#include "pagerankMonolithic.hxx"
+#include "pagerankSeq.hxx"
+#include "pagerankMonolithicSeq.hxx"
 
 using std::vector;
 using std::swap;
