@@ -37,11 +37,11 @@ void pagerankCalculate(vector<T>& a, const vector<T>& c, const vector<int>& vfro
 // --------------
 
 template <class T>
-T pagerankError(const vector<T>& x, const vector<T>& y, int i, int n, int EF) {
+T pagerankError(const vector<T>& x, const vector<T>& y, int i, int N, int EF) {
   switch (EF) {
-    case 1:  return l1Norm(x, y, i, n);
-    case 2:  return l2Norm(x, y, i, n);
-    default: return liNorm(x, y, i, n);
+    case 1:  return l1Norm(x, y, i, N);
+    case 2:  return l2Norm(x, y, i, N);
+    default: return liNorm(x, y, i, N);
   }
 }
 
@@ -84,7 +84,7 @@ PagerankResult<T> pagerankMonolithicSeqCore(const H& xt, const J&& ks, int i, in
     else fill(r, T(1)/N);
     copy(a, r);
     mark([&] { pagerankFactor(f, vdata, 0, N, p); multiply(c, a, f, 0, N); });  // calculate factors (f) and contributions (c)
-    mark([&] { l = fl(a, r, c, f, vfrom, efrom, 0, N, N, p, E, L, EF); });      // calculate ranks of all vertices
+    mark([&] { l = fl(a, r, c, f, vfrom, efrom, i, n, N, p, E, L, EF); });      // calculate ranks of vertices
   }, o.repeat);
   return {decompressContainer(xt, a, ks), l, t};
 }

@@ -13,28 +13,24 @@ using std::move;
 // -------------
 
 // For pagerank cuda block-per-vertex
-#define BLOCK_DIM_PRB 64
-#define GRID_DIM_PRB  GRID_LIMIT
+template <class T=float>
+constexpr int BLOCK_DIM_PRCB() noexcept { return 256; }
+template <class T=float>
+constexpr int GRID_DIM_PRCB()  noexcept { return GRID_LIMIT; }
 
-// For pagerank cuda thread-per-vertex (default)
-#define BLOCK_DIM_PRT 128
-#define GRID_DIM_PRT  8192
-
-// For pagerank cuda thread-per-vertex (low avg. density)
-#define BLOCK_DIM_PRT_LOWDENSITY 512
-#define GRID_DIM_PRT_LOWDENSITY  8192
-
-// For pagerank cuda thread-per-vertex (high avg. degree)
-#define BLOCK_DIM_PRT_HIGHDEGREE 32
-#define GRID_DIM_PRT_HIGHDEGREE  8192
-
-// For pagerank cuda switched (block approach)
-#define BLOCK_DIM_PRSB 256
-#define GRID_DIM_PRSB  GRID_LIMIT
-
-// For pagerank cuda switched (thread approach)
-#define BLOCK_DIM_PRST 512
-#define GRID_DIM_PRST  GRID_LIMIT
+// For pagerank cuda thread-per-vertex
+template <class T=float>
+constexpr int BLOCK_DIM_PRCT() noexcept { return 512; }
+template <class T=float>
+constexpr int GRID_DIM_PRCT()  noexcept { return GRID_LIMIT; }
+template <class T=float>
+constexpr int BLOCK_DIM_PRCT_LOWDENSITY() noexcept { return 512; }
+template <class T=float>
+constexpr int GRID_DIM_PRCT_LOWDENSITY()  noexcept { return 8192; }
+template <class T=float>
+constexpr int BLOCK_DIM_PRCT_HIGHDEGREE() noexcept { return 32; }
+template <class T=float>
+constexpr int GRID_DIM_PRCT_HIGHDEGREE()  noexcept { return 8192; }
 
 
 
@@ -42,15 +38,17 @@ using std::move;
 // OTHER CONFIG
 // ------------
 
-// For pagerank cuda switched
-#define SWITCH_DEGREE_PR 64
-#define SWITCH_LIMIT_PR  32
+// For pagerank cuda
+template <class T=float>
+constexpr int SWITCH_DEGREE_PRC() noexcept { return 64; }
+template <class T=float>
+constexpr int SWITCH_LIMIT_PRC()  noexcept { return 32; }
 
 // For levelwise pagerank
-#define MIN_COMPUTE_SIZE_PR 10
-
-// For levelwise pagerank cuda
-#define MIN_COMPUTE_SIZE_PRC 5000000
+template <class T=float>
+constexpr int MIN_COMPUTE_PR()  noexcept { return 10; }
+template <class T=float>
+constexpr int MIN_COMPUTE_PRC() noexcept { return 5000000; }
 
 
 
@@ -60,13 +58,15 @@ using std::move;
 
 template <class T>
 struct PagerankOptions {
-  int repeat;
-  T   damping;
-  T   tolerance;
-  int maxIterations;
+  int  repeat;
+  int  toleranceNorm;
+  bool splitComponents;
+  T    damping;
+  T    tolerance;
+  int  maxIterations;
 
-  PagerankOptions(int repeat=1, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
-  repeat(repeat), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
+  PagerankOptions(int repeat=1, int toleranceNorm=1, bool splitComponents=false, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
+  repeat(repeat), toleranceNorm(toleranceNorm), splitComponents(splitComponents), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
 };
 
 

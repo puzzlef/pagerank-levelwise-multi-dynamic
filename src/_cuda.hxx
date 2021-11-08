@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cuda_runtime.h>
 #include <cuda_profiler_api.h>
-#include "_main.hxx"
 
 using std::min;
 using std::max;
@@ -123,21 +122,12 @@ __device__ void unusedCuda(T&&) {}
 // REMOVE IDE SQUIGGLES
 // --------------------
 
-#ifndef __SYNCTHREADS
-void __syncthreads();
-#define __SYNCTHREADS() __syncthreads()
-#endif
-
 #ifndef __global__
 #define __global__
-#endif
-
-#ifndef __device__
+#define __host__
 #define __device__
-#endif
-
-#ifndef __shared__
 #define __shared__
+void __syncthreads();
 #endif
 
 

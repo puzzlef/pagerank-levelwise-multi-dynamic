@@ -6,6 +6,8 @@
 #include "vertices.hxx"
 #include "edges.hxx"
 #include "csr.hxx"
+#include "transpose.hxx"
+#include "dynamic.hxx"
 #include "pagerank.hxx"
 
 using std::vector;
@@ -58,8 +60,8 @@ __global__ void pagerankBlockKernel(T *a, const T *c, const int *vfrom, const in
 
 template <class T>
 void pagerankBlockCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
-  int B = BLOCK_DIM_PRSB<T>();
-  int G = min(n, GRID_DIM_PRSB<T>());
+  int B = BLOCK_DIM_PRCB<T>();
+  int G = min(n, GRID_DIM_PRCB<T>());
   pagerankBlockKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
 }
 
@@ -81,8 +83,8 @@ __global__ void pagerankThreadKernel(T *a, const T *c, const int *vfrom, const i
 
 template <class T>
 void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
-  int B = BLOCK_DIM_PRST<T>();
-  int G = min(ceilDiv(n, B), GRID_DIM_PRST<T>());
+  int B = BLOCK_DIM_PRCT<T>();
+  int G = min(ceilDiv(n, B), GRID_DIM_PRCT<T>());
   pagerankThreadKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
 }
 
@@ -101,25 +103,28 @@ void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, in
   }
 }
 
-template <class G>
-int pagerankSwitchPoint(const G& xt) {
-  int a = countIf(xt.vertices(), [&](int u) { return xt.degree(u) < PAGERANK_SWITCH_DEGREE(); });
-  int L = PAGERANK_SWITCH_LIMIT(), N = xt.order();
+template <class H, class J>
+int pagerankSwitchPoint(const H& xt, J&& ks) {
+  int a = countIf(ks, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
+  int L = SWITCH_LIMIT_PRC(), N = ks.size();
   return a<L? 0 : (N-a<L? N : a);
 }
 
 void pagerankAddStep(vector<int>& a, int n) {
-  if (a.empty() || sgn(a.back()) != sgn(n)) a.push_back(n);
+  if (n==0) return;
+  if (a.empty() || sgn(a.back())!=sgn(n)) a.push_back(n);
   else a.back() += n;
 }
 
-template <class G>
-auto pagerankWave(const G& xt) {
+template <class H>
+auto pagerankWave(const H& xt, const vector2d<int>& cs) {
   vector<int> a;
-  int N = xt.order();
-  int s = pagerankSwitchPoint(xt);
-  if (s)   pagerankAddStep(a,  -s);
-  if (N-s) pagerankAddStep(a, N-s);
+  for (const auto& ks : cs) {
+    int N = ks.size();
+    int s = pagerankSwitchPoint(xt, ks);
+    pagerankAddStep(a,  -s);
+    pagerankAddStep(a, N-s);
+  }
   return a;
 }
 
@@ -150,46 +155,37 @@ T pagerankErrorReduce(const T *x, int N, int EF) {
 
 
 
-// PAGERANK (CUDA)
-// ---------------
+// PAGERANK-CORE
+// -------------
 
 template <class T, class J>
-int pagerankCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, const int *vdataD, int i, J&& ns, int N, T p, T E, int L, int EF, int SF) {
+int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, const int *vdataD, int i, J&& ns, int N, T p, T E, int L, int EF) {
   int n = sumAbs(ns);
   int R = reduceSizeCu<T>(n);
   size_t R1 = R * sizeof(T);
-  int l = 1;
-  for (; l<L; l++) {
-    sumIfNotCu(r0D, rD, vdataD, N);
-    multiplyCu(cD, rD, fD, n);
-    TRY( cudaMemcpy(r0, r0D, R1, cudaMemcpyDeviceToHost) );
-    T c0 = (1-p)/N + p*sum(r0, R)/N;
-    pagerankSwitchedCu(aD, cD, vfromD, efromD, i, ns, c0);
-    if (SF!=0) TRY( cudaMemcpy(e, eD, R1, cudaMemcpyDeviceToHost) );
-    pagerankErrorCu(eD, rD, aD, n, EF);
+  T  c0 = (1-p)/N;
+  int l = 0;
+  while (l<L) {
+    pagerankSwitchedCu(aD, cD, vfromD, efromD, i, ns, c0);  // assume contribtions (cD) is precalculated
+    pagerankErrorCu(eD, aD+i, rD+i, n, EF);
     TRY( cudaMemcpy(e, eD, R1, cudaMemcpyDeviceToHost) );
-    T el = pagerankErrorReduce(e, R, EF);
-    if (el < E) break;
-    swap(aD, rD);
+    T el = pagerankErrorReduce(e, R, EF); ++l;              // one iteration complete
+    if (el<E || l>=L) break;                                // check tolerance, iteration limit
+    multiplyCu(cD+i, aD+i, fD+i, n);                        // update partial contributions (cD)
+    swap(aD, rD);                                           // final ranks always in (aD)
   }
   return l;
 }
 
 
-template <class H, class T=float>
-PagerankResult<T> pagerankCuda(const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o=PagerankOptions<T>()) {
-  T    p   = o.damping;
-  T    E   = o.tolerance;
-  int  L   = o.maxIterations, l;
-  int  EF  = o.toleranceNorm;
-  int  N   = xt.order();
-  int  R   = reduceSizeCu<T>(N);
-  auto fm  = [](int u) { return u; };
-  auto fp  = [&](auto ib, auto ie) {
-    partition(ib, ie, [&](int u) { return xt.degree(u) < PAGERANK_SWITCH_DEGREE(); });
-  };
-  auto ks    = vertices(xt, fm, fp);
-  auto ns    = pagerankWave(xt);
+template <class H, class J, class FL, class T=float>
+PagerankResult<T> pagerankMonolithicCudaCore(const H& xt, J&& ks, int i, J&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
+  int  N  = xt.order();
+  T    p  = o.damping;
+  T    E  = o.tolerance;
+  int  L  = o.maxIterations, l = 0;
+  int  EF = o.toleranceNorm;
+  int  R  = reduceSizeCu<T>(N);
   auto vfrom = sourceOffsets(xt, ks);
   auto efrom = destinationIndices(xt, ks);
   auto vdata = vertexData(xt, ks);
@@ -198,7 +194,8 @@ PagerankResult<T> pagerankCuda(const H& xt, const vector<T> *q=nullptr, Pagerank
   int VDATA1 = vdata.size() * sizeof(int);
   int N1 = N * sizeof(T);
   int R1 = R * sizeof(T);
-  vector<T> a(N), r(N);
+  vector<T> a(N), r(N), qc;
+  if (q) qc = compressContainer(xt, *q, ks);
 
   T *e,  *r0;
   T *eD, *r0D, *fD, *rD, *cD, *aD;
@@ -221,12 +218,13 @@ PagerankResult<T> pagerankCuda(const H& xt, const vector<T> *q=nullptr, Pagerank
   TRY( cudaMemcpy(vdataD, vdata.data(), VDATA1, cudaMemcpyHostToDevice) );
 
   float t = measureDurationMarked([&](auto mark) {
-    if (q) r = compressContainer(xt, *q, ks);
+    if (N==0 || n==0) return;  // skip if nothing to do!
+    if (q) copy(r, qc);        // copy old ranks (qc), if given
     else fill(r, T(1)/N);
     TRY( cudaMemcpy(aD, r.data(), N1, cudaMemcpyHostToDevice) );
     TRY( cudaMemcpy(rD, r.data(), N1, cudaMemcpyHostToDevice) );
-    mark([&] { pagerankFactorCu(fD, vdataD, 0, N, p); });
-    mark([&] { l = pagerankCudaLoop(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, vdataD, 0, ns, N, p, E, L, EF); });
+    mark([&] { pagerankFactorCu(fD, vdataD, 0, N, p); multiplyCu(cD, aD, fD, N); });                       // calculate factors (fD) and contributions (cD)
+    mark([&] { l = fl(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, vdataD, i, ns, N, p, E, L, EF); });  // calculate ranks of vertices
   }, o.repeat);
   TRY( cudaMemcpy(a.data(), aD, N1, cudaMemcpyDeviceToHost) );
 
@@ -243,4 +241,30 @@ PagerankResult<T> pagerankCuda(const H& xt, const vector<T> *q=nullptr, Pagerank
   TRY( cudaFree(vdataD) );
   // TRY( cudaProfilerStop() );
   return {decompressContainer(xt, a, ks), l, t};
+}
+
+
+
+
+// PAGERANK (STATIC / INCREMENTAL)
+// -------------------------------
+
+// Find pagerank accelerated with CUDA (pull, CSR).
+// @param x original graph
+// @param q initial ranks (optional)
+// @param o options {damping=0.85, tolerance=1e-6, maxIterations=500}
+// @returns {ranks, iterations, time}
+template <class G, class T=float>
+PagerankResult<T> pagerankMonolithicCuda(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
+  auto xt = transposeWithDegree(x);
+  int  N  = xt.order();
+  bool SC = o.splitComponents;
+  auto fm = [](int u) { return u; };
+  auto fp = [&](auto ib, auto ie) {
+    partition(ib, ie, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
+  };
+  auto ks = vertices(xt, fm, fp);
+  vector2d<int> cs {ks};
+  auto ns = pagerankWave(xt, cs);
+  return pagerankMonolithicCudaCore(xt, ks, 0, ns, pagerankMonolithicCudaLoop<T>, q, o);
 }
