@@ -179,7 +179,7 @@ int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD
 
 
 template <class H, class J, class FL, class T=float>
-PagerankResult<T> pagerankMonolithicCudaCore(const H& xt, J&& ks, int i, J&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
+PagerankResult<T> pagerankMonolithicCudaCore(const H& xt, const J&& ks, int i, J&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
   int  N  = xt.order();
   T    p  = o.damping;
   T    E  = o.tolerance;
@@ -258,7 +258,7 @@ template <class G, class T=float>
 PagerankResult<T> pagerankMonolithicCuda(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto xt = transposeWithDegree(x);
   int  N  = xt.order();
-  bool SC = o.splitComponents;
+  // bool SC = o.splitComponents;
   auto fm = [](int u) { return u; };
   auto fp = [&](auto ib, auto ie) {
     partition(ib, ie, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });

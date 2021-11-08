@@ -40,10 +40,10 @@ auto components(const G& x, const H& xt) {
 // Get component id of each vertex.
 
 template <class G>
-auto componentIds(const G& x, const vector2d<int>& comps) {
+auto componentIds(const G& x, const vector2d<int>& cs) {
   auto a = createContainer(x, int()); int i = 0;
-  for (const auto& comp : comps) {
-    for (int u : comp)
+  for (const auto& c : cs) {
+    for (int u : c)
       a[u] = i;
     i++;
   }
@@ -57,8 +57,8 @@ auto componentIds(const G& x, const vector2d<int>& comps) {
 // ----------
 
 template <class H, class G>
-void blockgraph(H& a, const G& x, const vector2d<int>& comps) {
-  auto c = componentIds(x, comps);
+void blockgraph(H& a, const G& x, const vector2d<int>& cs) {
+  auto c = componentIds(x, cs);
   for (int u : x.vertices()) {
     a.addVertex(c[u]);
     for (int v : x.edges(u))
@@ -67,8 +67,8 @@ void blockgraph(H& a, const G& x, const vector2d<int>& comps) {
 }
 
 template <class G>
-auto blockgraph(const G& x, const vector2d<int>& comps) {
-  G a; blockgraph(a, x, comps);
+auto blockgraph(const G& x, const vector2d<int>& cs) {
+  G a; blockgraph(a, x, cs);
   return a;
 }
 
@@ -117,9 +117,9 @@ bool componentsEqual(const G& x, const H& xt, const vector<int>& xc, const G& y,
 // COMPONENTS-HASH
 // ---------------
 
-auto componentsHash(const vector2d<int>& comps) {
+auto componentsHash(const vector2d<int>& cs) {
   vector<size_t> a;
-  for (const auto& comp : comps)
-    a.push_back(hashValue(comp));
+  for (const auto& c : cs)
+    a.push_back(hashValue(c));
   return a;
 }
