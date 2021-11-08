@@ -2,9 +2,6 @@
 #include <vector>
 #include <algorithm>
 #include "_main.hxx"
-#include "vertices.hxx"
-#include "edges.hxx"
-#include "csr.hxx"
 #include "transpose.hxx"
 #include "dynamic.hxx"
 #include "pagerank.hxx"
