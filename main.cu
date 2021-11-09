@@ -84,12 +84,12 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, b0, d4, "pagerankLevelwiseSeq (dynamic)");
 
     // Find OpenMP-based Levelwise pagerank.
-    // auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
-    // printRow(y, b0, b5, "pagerankLevelwiseOmp (static)");
-    // auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
-    // printRow(y, b0, c5, "pagerankLevelwiseOmp (incremental)");
-    // auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
-    // printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
+    auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
+    printRow(y, b0, b5, "pagerankLevelwiseOmp (static)");
+    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
+    printRow(y, b0, c5, "pagerankLevelwiseOmp (incremental)");
+    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
+    printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
     // auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
