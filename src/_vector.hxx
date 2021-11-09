@@ -112,7 +112,7 @@ void append(vector<T>& a, I ib, I ie) {
 }
 
 template <class T, class J>
-void append(vector<T>& a, J&& vs) {
+void append(vector<T>& a, const J& vs) {
   append(a, vs.begin(), vs.end());
 }
 
@@ -169,7 +169,7 @@ auto join(const vector2d<T>& xs) {
 // -------
 
 template <class T, class J, class F>
-void joinAtIf(vector2d<T>& a, const vector2d<T>& xs, J&& is, F fn) {
+void joinAtIf(vector2d<T>& a, const vector2d<T>& xs, const J& is, F fn) {
   for (int i : is) {
     auto& b = a.back();
     if (a.empty() || !fn(b, xs[i])) a.push_back(xs[i]);
@@ -178,32 +178,32 @@ void joinAtIf(vector2d<T>& a, const vector2d<T>& xs, J&& is, F fn) {
 }
 
 template <class T, class J, class F>
-auto joinAtIf(const vector2d<T>& xs, J&& is, F fn) {
+auto joinAtIf(const vector2d<T>& xs, const J& is, F fn) {
   vector2d<T> a; joinAtIf(a, xs, is, fn);
   return a;
 }
 
 
 template <class T, class J>
-void joinAtUntilSize(vector2d<T>& a, const vector2d<T>& xs, J&& is, int N) {
+void joinAtUntilSize(vector2d<T>& a, const vector2d<T>& xs, const J& is, int N) {
   joinAtIf(a, xs, is, [&](const auto& b, const auto& x) { return b.size()<N; });
 }
 
 template <class T, class J>
-auto joinAtUntilSize(const vector2d<T>& xs, J&& is, int N) {
+auto joinAtUntilSize(const vector2d<T>& xs, const J& is, int N) {
   vector2d<T> a; joinAtUntilSize(a, xs, is, N);
   return a;
 }
 
 
 template <class T, class J>
-void joinAt(vector<T>& a, const vector2d<T>& xs, J&& is) {
+void joinAt(vector<T>& a, const vector2d<T>& xs, const J& is) {
   for (int i : is)
     a.insert(a.end(), xs[i].begin(), xs[i].end());
 }
 
 template <class T, class J>
-auto joinAt(const vector2d<T>& xs, J&& is) {
+auto joinAt(const vector2d<T>& xs, const J& is) {
   vector<T> a; joinAt(a, xs, is);
   return a;
 }
@@ -215,14 +215,14 @@ auto joinAt(const vector2d<T>& xs, J&& is) {
 // ------
 
 template <class T, class U, class J>
-void gather(T *a, const U *x, J&& is) {
+void gather(T *a, const U *x, const J& is) {
   int j = 0;
   for (int i : is)
     a[j++] = x[i];
 }
 
 template <class T, class U, class J>
-void gather(vector<T>& a, const vector<U>& x, J&& is) {
+void gather(vector<T>& a, const vector<U>& x, const J& is) {
   gather(a.data(), x.data(), is);
 }
 
@@ -233,14 +233,14 @@ void gather(vector<T>& a, const vector<U>& x, J&& is) {
 // -------
 
 template <class T, class U, class J>
-void scatter(T *a, const U *x, J&& is) {
+void scatter(T *a, const U *x, const J& is) {
   int j = 0;
   for (int i : is)
     a[i] = x[j++];
 }
 
 template <class T, class U, class J>
-void scatter(vector<T>& a, const vector<U>& x, J&& is) {
+void scatter(vector<T>& a, const vector<U>& x, const J& is) {
   scatter(a.data(), x.data(), is);
 }
 
@@ -333,18 +333,18 @@ void fillOmp(vector<T>& a, int i, int N, const U& v) {
 // -------
 
 template <class T, class U, class J>
-void fillAt(T *a, const U& v, J&& is) {
+void fillAt(T *a, const U& v, const J& is) {
   for (int i : is)
     a[i] = v;
 }
 
 template <class T, class U, class J>
-void fillAt(vector<T>& a, const U& v, J&& is) {
+void fillAt(vector<T>& a, const U& v, const J& is) {
   fillAt(a.data(), v, is);
 }
 
 template <class T, class U, class J>
-void fillAt(vector<T>& a, int i, const U& v, J&& is) {
+void fillAt(vector<T>& a, int i, const U& v, const J& is) {
   fillAt(a.data()+i, v, is);
 }
 
@@ -484,19 +484,19 @@ U sumSqrOmp(const vector<T>& x, int i, int N, U a=U()) {
 // ------
 
 template <class T, class J, class U=T>
-U sumAt(const T *x, J&& is, U a=U()) {
+U sumAt(const T *x, const J& is, U a=U()) {
   for (int i : is)
     a += x[i];
   return a;
 }
 
 template <class T, class J, class U=T>
-U sumAt(const vector<T>& x, J&& is, U a=U()) {
+U sumAt(const vector<T>& x, const J& is, U a=U()) {
   return sumAt(x.data(), is, a);
 }
 
 template <class T, class J, class U=T>
-U sumAt(const vector<T>& x, int i, J&& is, U a=U()) {
+U sumAt(const vector<T>& x, int i, const J& is, U a=U()) {
   return sumAt(x.data()+i, is, a);
 }
 
@@ -548,18 +548,18 @@ void addValueOmp(vector<T>& a, int i, int N, const U& v) {
 // ------------
 
 template <class T, class U, class J>
-void addValueAt(T *a, const U& v, J&& is) {
+void addValueAt(T *a, const U& v, const J& is) {
   for (int i : is)
     a[i] += v;
 }
 
 template <class T, class U, class J>
-void addValueAt(vector<T>& a, const U& v, J&& is) {
+void addValueAt(vector<T>& a, const U& v, const J& is) {
   addValueAt(a.data(), v, is);
 }
 
 template <class T, class U, class J>
-void addValueAt(vector<T>& a, int i, const U& v, J&& is) {
+void addValueAt(vector<T>& a, int i, const U& v, const J& is) {
   addValueAt(a.data()+i, v, is);
 }
 
@@ -656,19 +656,19 @@ U maxAbsOmp(const vector<T>& x, int i, int N, U a=U()) {
 // ------
 
 template <class T, class J, class U=T>
-U maxAt(const T *x, J&& is, U a=U()) {
+U maxAt(const T *x, const J& is, U a=U()) {
   for (int i : is)
     a = max(a, x[i]);
   return a;
 }
 
 template <class T, class J, class U=T>
-U maxAt(const vector<T>& x, J&& is, U a=U()) {
+U maxAt(const vector<T>& x, const J& is, U a=U()) {
   return maxAt(x.data(), is, a);
 }
 
 template <class T, class J, class U=T>
-U maxAt(const vector<T>& x, int i, J&& is, U a=U()) {
+U maxAt(const vector<T>& x, int i, const J& is, U a=U()) {
   return maxAt(x.data()+i, is, a);
 }
 
@@ -720,18 +720,18 @@ void maxValueOmp(vector<T>& a, int i, int N, const U& v) {
 // ------------
 
 template <class T, class U, class J>
-void maxValueAt(T *a, const U& v, J&& is) {
+void maxValueAt(T *a, const U& v, const J& is) {
   for (int i : is)
     a[i] = max(a[i], v);
 }
 
 template <class T, class U, class J>
-void maxValueAt(vector<T>& a, const U& v, J&& is) {
+void maxValueAt(vector<T>& a, const U& v, const J& is) {
   maxValueAt(a.data(), v, is);
 }
 
 template <class T, class U, class J>
-void maxValueAt(vector<T>& a, int i, const U& v, J&& is) {
+void maxValueAt(vector<T>& a, int i, const U& v, const J& is) {
   maxValueAt(a.data()+i, v, is);
 }
 
@@ -828,19 +828,19 @@ U minAbsOmp(const vector<T>& x, int i, int N, U a=U()) {
 // ------
 
 template <class T, class J, class U=T>
-U minAt(const T *x, J&& is, U a=U()) {
+U minAt(const T *x, const J& is, U a=U()) {
   for (int i : is)
     a = min(a, x[i]);
   return a;
 }
 
 template <class T, class J, class U=T>
-U minAt(const vector<T>& x, J&& is, U a=U()) {
+U minAt(const vector<T>& x, const J& is, U a=U()) {
   return minAt(x.data(), is, a);
 }
 
 template <class T, class J, class U=T>
-U minAt(const vector<T>& x, int i, J&& is, U a=U()) {
+U minAt(const vector<T>& x, int i, const J& is, U a=U()) {
   return minAt(x.data()+i, is, a);
 }
 
@@ -892,18 +892,18 @@ void minValueOmp(vector<T>& a, int i, int N, const U& v) {
 // ------------
 
 template <class T, class U, class J>
-void minValueAt(T *a, const U& v, J&& is) {
+void minValueAt(T *a, const U& v, const J& is) {
   for (int i : is)
     a[i] = min(a[i], v);
 }
 
 template <class T, class U, class J>
-void minValueAt(vector<T>& a, const U& v, J&& is) {
+void minValueAt(vector<T>& a, const U& v, const J& is) {
   minValueAt(a.data(), v, is);
 }
 
 template <class T, class U, class J>
-void minValueAt(vector<T>& a, int i, const U& v, J&& is) {
+void minValueAt(vector<T>& a, int i, const U& v, const J& is) {
   minValueAt(a.data()+i, v, is);
 }
 

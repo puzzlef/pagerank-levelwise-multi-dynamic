@@ -33,7 +33,7 @@ auto inIdenticals(const G& x, const H& xt) {
       else m[h].first.push_back(v);
     }
     // Save in-identicals.
-    for (auto&& [_, p] : m) {
+    for (auto& [_, p] : m) {
       if (p.first.empty()) continue;
       p.first.insert(p.first.begin(), p.second);
       a.push_back(move(p.first));
