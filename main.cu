@@ -68,12 +68,12 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, b0, d2, "pagerankMonolithicOmp (dynamic)");
 
     // Find CUDA-based Monolithic pagerank.
-    // auto b3 = pagerankMonolithicCuda(y, yt, init, o);
-    // printRow(y, b0, b3, "pagerankMonolithicCuda (static)");
-    // auto c3 = pagerankMonolithicCuda(y, yt, &s0, o);
-    // printRow(y, b0, c3, "pagerankMonolithicCuda (incremental)");
-    // auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, o);
-    // printRow(y, b0, d3, "pagerankMonolithicCuda (dynamic)");
+    auto b3 = pagerankMonolithicCuda(y, yt, init, o);
+    printRow(y, b0, b3, "pagerankMonolithicCuda (static)");
+    auto c3 = pagerankMonolithicCuda(y, yt, &s0, o);
+    printRow(y, b0, c3, "pagerankMonolithicCuda (incremental)");
+    auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, o);
+    printRow(y, b0, d3, "pagerankMonolithicCuda (dynamic)");
 
     // Find sequential Levelwise pagerank.
     // auto b4 = pagerankLevelwiseSeq(y, yt, init, o);
