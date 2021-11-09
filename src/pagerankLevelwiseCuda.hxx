@@ -54,6 +54,7 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseCuda(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   int  N  = xt.order();
   auto cs = joinUntilSize(sortedComponents(x, xt), MIN_COMPUTE_PRC());
+  forEach(cs, [&](auto& ks) { pagerankPartition(xt, ks); });
   auto ns = pagerankPairWave(xt, cs);
   auto ks = join(cs);
   return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T, decltype(ns)>, q, o);
@@ -75,8 +76,9 @@ PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const H& xt, const G&
   auto cs = sortedComponents(y, yt);
   auto b  = blockgraph(x, cs);
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);
-  if (n==0) return PagerankResult<T>::initial(xt, q);
+  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PRC());
+  forEach(ds, [&](auto& ks) { pagerankPartition(xt, ks); });
   auto ns = pagerankPairWave(yt, ds);
   auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
   return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T, decltype(ns)>, q, o);

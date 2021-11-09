@@ -104,6 +104,12 @@ void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, in
   }
 }
 
+
+
+
+// PAGERANK-SWITCH-POINT
+// ---------------------
+
 template <class H, class J>
 int pagerankSwitchPoint(const H& xt, const J& ks) {
   int a = countIf(ks, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
@@ -111,11 +117,28 @@ int pagerankSwitchPoint(const H& xt, const J& ks) {
   return a<L? 0 : (N-a<L? N : a);
 }
 
-void pagerankAddStep(vector<int>& a, int n) {
-  if (n==0) return;
-  if (a.empty() || sgn(a.back())!=sgn(n)) a.push_back(n);
-  else a.back() += n;
+
+
+
+// PAGERANK-PARTITON
+// -----------------
+
+template <class H>
+void pagerankPartition(const H& xt, vector<int>& ks, int i, int n) {
+  auto ib = ks.begin()+i, ie = ks.begin()+i+n;
+  partition(ib, ie, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
 }
+
+template <class H>
+void pagerankPartition(const H& xt, vector<int>& ks) {
+  pagerankPartition(xt, ks, 0, ks.size());
+}
+
+
+
+
+// PAGERANK-WAVE
+// -------------
 
 template <class H>
 void pagerankPairWave(vector<array<int,2>>& a, const H& xt, const vector2d<int>& cs) {
@@ -125,20 +148,38 @@ void pagerankPairWave(vector<array<int,2>>& a, const H& xt, const vector2d<int>&
     a.push_back({s, N-s});
   }
 }
+
 template <class H>
 auto pagerankPairWave(const H& xt, const vector2d<int>& cs) {
   vector<array<int,2>> a; pagerankPairWave(a, xt, cs);
   return a;
 }
 
+
+void pagerankAddStep(vector<int>& a, int n) {
+  if (n==0) return;
+  if (a.empty() || sgn(a.back())!=sgn(n)) a.push_back(n);
+  else a.back() += n;
+}
+
+template <class H, class J>
+void pagerankWave(vector<int>& a, const H& xt, const J& ks) {
+  int N = ks.size();
+  int s = pagerankSwitchPoint(xt, ks);
+  pagerankAddStep(a,  -s);
+  pagerankAddStep(a, N-s);
+}
+
+template <class H, class J>
+auto pagerankWave(const H& xt, const J& ks) {
+  vector<int> a; pagerankWave(a, xt, ks);
+  return a;
+}
+
 template <class H>
-auto pagerankWave(vector<int>& a, const H& xt, const vector2d<int>& cs) {
-  for (const auto& ks : cs) {
-    int N = ks.size();
-    int s = pagerankSwitchPoint(xt, ks);
-    pagerankAddStep(a,  -s);
-    pagerankAddStep(a, N-s);
-  }
+void pagerankWave(vector<int>& a, const H& xt, const vector2d<int>& cs) {
+  for (const auto& ks : cs)
+    pagerankWave(a, xt, ks);
 }
 template <class H>
 auto pagerankWave(const H& xt, const vector2d<int>& cs) {

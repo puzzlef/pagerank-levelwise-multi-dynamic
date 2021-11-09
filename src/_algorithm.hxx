@@ -24,6 +24,22 @@ using std::back_inserter;
 
 
 
+// FOR-EACH
+// --------
+
+template <class I, class F>
+auto forEach(I ib, I ie, F fn) {
+  return for_each(ib, ie, fn);
+}
+
+template <class J, class F>
+auto forEach(const J& x, F fn) {
+  return for_each(x.begin(), x.end(), fn);
+}
+
+
+
+
 // ANY-OF
 // ------
 
