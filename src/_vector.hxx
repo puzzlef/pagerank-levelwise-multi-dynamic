@@ -1,9 +1,11 @@
 #pragma once
 #include <cmath>
+#include <array>
 #include <vector>
 #include <algorithm>
 #include "_openmp.hxx"
 
+using std::array;
 using std::vector;
 using std::copy;
 using std::swap;
@@ -407,6 +409,12 @@ U sumAbs(const T *x, int N, U a=U()) {
 template <class T, class U=T>
 U sumAbs(const vector<T>& x, U a=U()) {
   return sumAbs(x.data(), int(x.size()), a);
+}
+
+// NOTE: ADDITIONAL HELPER
+template <class T, size_t N, class U=T>
+U sumAbs(const array<T, N>& x, U a=U()) {
+  return sumAbs(x.data(), int(N), a);
 }
 
 template <class T, class U=T>

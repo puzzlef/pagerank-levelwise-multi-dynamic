@@ -37,6 +37,11 @@ auto forEach(const J& x, F fn) {
   return for_each(x.begin(), x.end(), fn);
 }
 
+template <class J, class F>
+auto forEach(J& x, F fn) {
+  return for_each(x.begin(), x.end(), fn);
+}
+
 
 
 

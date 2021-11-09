@@ -22,7 +22,7 @@ using std::max;
 // -------------
 
 template <class T, class J>
-int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, const int *vdataD, int i, const J& ns, int N, T p, T E, int L, int EF) {
+int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ns, int N, T p, T E, int L, int EF) {
   int n = sumAbs(ns);
   int R = reduceSizeCu<T>(n);
   size_t R1 = R * sizeof(T);
@@ -74,9 +74,9 @@ PagerankResult<T> pagerankMonolithicCuda(const G& x, const vector<T> *q=nullptr,
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankMonolithicCudaDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto [ks, n] = dynamicVertices(x, xt, y, yt);
-  if (n==0) return PagerankResult<T>::initial(x, q);
-  pagerankPartition(xt, ks, 0, n);
-  auto ns = pagerankWave(xt, sliceIter(ks, 0, n));
+  if (n==0) return PagerankResult<T>::initial(yt, q);
+  pagerankPartition(yt, ks, 0, n);
+  auto ns = pagerankWave(yt, sliceIter(ks, 0, n));
   return pagerankCuda(yt, ks, 0, ns, pagerankMonolithicCudaLoop<T, decltype(ns)>, q, o);
 }
 
