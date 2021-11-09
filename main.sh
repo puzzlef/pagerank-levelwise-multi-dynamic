@@ -10,9 +10,11 @@ git clone https://github.com/puzzlef/$src
 cd $src
 
 # Run
-g++ -std=c++17 -O3 main.cxx
-stdbuf --output=L ./a.out data/min1c1l.txt 1 2 2  2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out data/min2c1l.txt 1 5 2  2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out data/min3c3l.txt 1 13 5 2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out data/min8c1l.txt 1 12 1 2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out data/min8c.txt 1 9 1    2>&1 | tee -a "$out"
+nvcc -std=c++17 -Xcompiler -fopenmp -lnvgraph -O3 main.cu
+stdbuf --output=L ./a.out ~/data/email-Eu-core-temporal.txt 2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/CollegeMsg.txt             2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-mathoverflow.txt        2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-askubuntu.txt           2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-superuser.txt           2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/wiki-talk-temporal.txt     2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-stackoverflow.txt       2>&1 | tee -a "$out"

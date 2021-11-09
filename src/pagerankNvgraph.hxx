@@ -68,13 +68,18 @@ PagerankResult<T> pagerankNvgraphCore(const H& xt, const vector<int>& ks, const 
 // -------------------------------
 
 // Find pagerank accelerated using nvGraph.
-// @param x original graph
-// @param q initial ranks (optional)
-// @param o options {damping=0.85, tolerance=1e-6, maxIterations=500}
+// @param x  original graph
+// @param xt transpose graph (with vertex-data=out-degree)
+// @param q  initial ranks (optional)
+// @param o  options {damping=0.85, tolerance=1e-6, maxIterations=500}
 // @returns {ranks, iterations, time}
+template <class G, class H, class T=float>
+PagerankResult<T> pagerankNvgraph(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
+  auto ks = vertices(xt);
+  return pagerankNvgraphCore(xt, ks, q, o);
+}
 template <class G, class T=float>
 PagerankResult<T> pagerankNvgraph(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto xt = transposeWithDegree(x);
-  auto ks = vertices(xt);
-  return pagerankNvgraphCore(xt, ks, q, o);
+  return pagerankNvgraph(x, xt, q, o);
 }

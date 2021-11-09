@@ -1,4 +1,4 @@
-A place to bix bugs.
+A place to fix bugs.
 
 
 ## References
