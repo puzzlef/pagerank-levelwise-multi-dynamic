@@ -70,13 +70,13 @@ PagerankResult<T> pagerankLevelwiseSeq(const G& x, const vector<T> *q=nullptr, P
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto cs = sortedComponents(y, yt);
-  auto b  = blockgraph(x, cs);
+  auto b  = blockgraph(y, cs);
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);
-  if (n==0) return PagerankResult<T>::initial(xt, q);
+  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PR());
   auto ns = transformIter(ds, [&](const auto& d) { return d.size(); });
   auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
-  return pagerankSeq(xt, ks, 0, ns, pagerankLevelwiseSeqLoop<T, decltype(ns)>, q, o);
+  return pagerankSeq(yt, ks, 0, ns, pagerankLevelwiseSeqLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
