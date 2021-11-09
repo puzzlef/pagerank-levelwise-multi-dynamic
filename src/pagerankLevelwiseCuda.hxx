@@ -1,7 +1,7 @@
 #pragma once
+#include <array>
 #include <vector>
 #include <algorithm>
-#include <utility>
 #include "_main.hxx"
 #include "vertices.hxx"
 #include "edges.hxx"
@@ -13,7 +13,7 @@
 #include "pagerankCuda.hxx"
 #include "pagerankLevelwiseSeq.hxx"
 
-using std::pair;
+using std::array;
 using std::vector;
 using std::swap;
 
@@ -24,13 +24,13 @@ using std::swap;
 // -------------
 
 template <class T, class J>
-int pagerankLevelwiseCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, J&& ws, int N, T p, T E, int L) {
+int pagerankLevelwiseCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ws, int N, T p, T E, int L, int EF) {
   float l = 0;
   for (const auto& w : ws) {
-    const int& [nt, nb] = w; int n = nt+nb;
+    const auto& [nt, nb] = w; int n = nt+nb;
     if (n<=0) { i += -n; continue; }
     T np = T(n)/N, En = EF<=2? E*n/N : E;
-    l += pagerankMonolithicCudaLoop(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, w, N, p, En, L)*np;
+    l += pagerankMonolithicCudaLoop(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, w, N, p, En, L, EF)*np;
     swap(aD, rD);
     i += n;
   }
@@ -54,9 +54,9 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseCuda(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   int  N  = xt.order();
   auto cs = joinUntilSize(sortedComponents(x, xt), MIN_COMPUTE_PRC());
-  auto ns = transformIter(cs, [&](const auto& c) { return c.size(); });
+  auto ns = pagerankPairWave(xt, cs);
   auto ks = join(cs);
-  return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T>, q, o);
+  return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankLevelwiseCuda(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
@@ -77,9 +77,9 @@ PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const H& xt, const G&
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);
   if (n==0) return PagerankResult<T>::initial(xt, q);
   auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PRC());
-  auto ns = transformIter(ds, [&](const auto& d) { return d.size(); });
+  auto ns = pagerankPairWave(yt, ds);
   auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
-  return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T>, q, o);
+  return pagerankCuda(xt, ks, 0, ns, pagerankLevelwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {

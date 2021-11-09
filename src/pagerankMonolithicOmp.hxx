@@ -68,7 +68,7 @@ PagerankResult<T> pagerankMonolithicOmpDynamic(const G& x, const H& xt, const G&
 }
 
 template <class G, class T=float>
-PagerankResult<T> pagerankMonolithicSeqDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
+PagerankResult<T> pagerankMonolithicOmpDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto xt = transposeWithDegree(x);
   auto yt = transposeWithDegree(y);
   return pagerankMonolithicOmpDynamic(x, xt, y, yt, q, o);

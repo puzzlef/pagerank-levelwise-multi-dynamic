@@ -18,6 +18,7 @@
 #include "pagerankSeq.hxx"
 #include "pagerankOmp.hxx"
 #include "pagerankCuda.hxx"
+#include "pagerankNvgraph.hxx"
 #include "pagerankMonolithicSeq.hxx"
 #include "pagerankMonolithicOmp.hxx"
 #include "pagerankMonolithicCuda.hxx"

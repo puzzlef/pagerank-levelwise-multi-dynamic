@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <array>
 #include <vector>
 #include <algorithm>
 #include "_main.hxx"
@@ -8,6 +9,7 @@
 #include "csr.hxx"
 #include "pagerank.hxx"
 
+using std::array;
 using std::vector;
 using std::sqrt;
 using std::partition;
@@ -94,7 +96,7 @@ void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int 
 // -----------------
 
 template <class T, class J>
-void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, J&& ns, T c0) {
+void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, const J& ns, T c0) {
   for (int n : ns) {
     if (n>0) pagerankBlockCu (a, c, vfrom, efrom, i,  n, c0);
     else     pagerankThreadCu(a, c, vfrom, efrom, i, -n, c0);
@@ -103,7 +105,7 @@ void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, in
 }
 
 template <class H, class J>
-int pagerankSwitchPoint(const H& xt, J&& ks) {
+int pagerankSwitchPoint(const H& xt, const J& ks) {
   int a = countIf(ks, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
   int L = SWITCH_LIMIT_PRC(), N = ks.size();
   return a<L? 0 : (N-a<L? N : a);
@@ -116,14 +118,31 @@ void pagerankAddStep(vector<int>& a, int n) {
 }
 
 template <class H>
-auto pagerankWave(const H& xt, const vector2d<int>& cs) {
-  vector<int> a;
+void pagerankPairWave(vector<array<int,2>>& a, const H& xt, const vector2d<int>& cs) {
+  for (const auto& ks : cs) {
+    int N = ks.size();
+    int s = pagerankSwitchPoint(xt, ks);
+    a.push_back({s, N-s});
+  }
+}
+template <class H>
+auto pagerankPairWave(const H& xt, const vector2d<int>& cs) {
+  vector<array<int,2>> a; pagerankPairWave(a, xt, cs);
+  return a;
+}
+
+template <class H>
+auto pagerankWave(vector<int>& a, const H& xt, const vector2d<int>& cs) {
   for (const auto& ks : cs) {
     int N = ks.size();
     int s = pagerankSwitchPoint(xt, ks);
     pagerankAddStep(a,  -s);
     pagerankAddStep(a, N-s);
   }
+}
+template <class H>
+auto pagerankWave(const H& xt, const vector2d<int>& cs) {
+  vector<int> a; pagerankWave(a, xt, cs);
   return a;
 }
 
@@ -160,11 +179,7 @@ T pagerankErrorReduce(const T *x, int N, int EF) {
 // For Monolithic / Levelwise PageRank.
 
 template <class H, class J, class M, class FL, class T=float>
-PagerankResult<T> pagerankSeq(const H& xt, const J&& ks, int i, const M&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
-}
-
-template <class H, class J, class M, class FL, class T=float>
-PagerankResult<T> pagerankCuda(const H& xt, const J&& ks, int i, const M&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
+PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL fl, const vector<T> *q, const PagerankOptions<T>& o) {
   int  N  = xt.order();
   T    p  = o.damping;
   T    E  = o.tolerance;

@@ -218,7 +218,7 @@ auto identifiers(I ib, I ie) {
 }
 
 template <class J>
-auto identifiers(const J& x) {
+auto identifiers(J&& x) {
   return identifiers(x.begin(), x.end());
 }
 

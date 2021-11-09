@@ -62,7 +62,7 @@ T pagerankError(const vector<T>& x, const vector<T>& y, int i, int N, int EF) {
 // For Monolithic / Levelwise PageRank.
 
 template <class H, class J, class M, class FL, class T=float>
-PagerankResult<T> pagerankSeq(const H& xt, const J&& ks, int i, const M&& ns, FL fl, const vector<T> *q, PagerankOptions<T> o) {
+PagerankResult<T> pagerankSeq(const H& xt, const J& ks, int i, const M& ns, FL fl, const vector<T> *q, const PagerankOptions<T>& o) {
   int  N  = xt.order();
   T    p  = o.damping;
   T    E  = o.tolerance;

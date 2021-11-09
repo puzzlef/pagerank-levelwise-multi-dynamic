@@ -60,44 +60,44 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, b0, d1, "pagerankMonolithicSeq (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank.
-    auto b2 = pagerankMonolithicOmp(y, yt, init, o);
-    printRow(y, b0, b2, "pagerankMonolithicOmp (static)");
-    auto c2 = pagerankMonolithicOmp(y, yt, &s0, o);
-    printRow(y, b0, c2, "pagerankMonolithicOmp (incremental)");
-    auto d2 = pagerankMonolithicOmpDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d2, "pagerankMonolithicOmp (dynamic)");
+    // auto b2 = pagerankMonolithicOmp(y, yt, init, o);
+    // printRow(y, b0, b2, "pagerankMonolithicOmp (static)");
+    // auto c2 = pagerankMonolithicOmp(y, yt, &s0, o);
+    // printRow(y, b0, c2, "pagerankMonolithicOmp (incremental)");
+    // auto d2 = pagerankMonolithicOmpDynamic(x, xt, y, yt, &s0, o);
+    // printRow(y, b0, d2, "pagerankMonolithicOmp (dynamic)");
 
     // Find CUDA-based Monolithic pagerank.
-    auto b3 = pagerankMonolithicCuda(y, yt, init, o);
-    printRow(y, b0, b3, "pagerankMonolithicCuda (static)");
-    auto c3 = pagerankMonolithicCuda(y, yt, &s0, o);
-    printRow(y, b0, c3, "pagerankMonolithicCuda (incremental)");
-    auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d3, "pagerankMonolithicCuda (dynamic)");
+    // auto b3 = pagerankMonolithicCuda(y, yt, init, o);
+    // printRow(y, b0, b3, "pagerankMonolithicCuda (static)");
+    // auto c3 = pagerankMonolithicCuda(y, yt, &s0, o);
+    // printRow(y, b0, c3, "pagerankMonolithicCuda (incremental)");
+    // auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, o);
+    // printRow(y, b0, d3, "pagerankMonolithicCuda (dynamic)");
 
     // Find sequential Levelwise pagerank.
-    auto b4 = pagerankLevelwiseSeq(y, yt, init, o);
-    printRow(y, b0, b4, "pagerankLevelwiseSeq (static)");
-    auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o);
-    printRow(y, b0, c4, "pagerankLevelwiseSeq (incremental)");
-    auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d4, "pagerankLevelwiseSeq (dynamic)");
+    // auto b4 = pagerankLevelwiseSeq(y, yt, init, o);
+    // printRow(y, b0, b4, "pagerankLevelwiseSeq (static)");
+    // auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o);
+    // printRow(y, b0, c4, "pagerankLevelwiseSeq (incremental)");
+    // auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, o);
+    // printRow(y, b0, d4, "pagerankLevelwiseSeq (dynamic)");
 
     // Find OpenMP-based Levelwise pagerank.
-    auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
-    printRow(y, b0, b5, "pagerankLevelwiseOmp (static)");
-    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
-    printRow(y, b0, c5, "pagerankLevelwiseOmp (incremental)");
-    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
+    // auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
+    // printRow(y, b0, b5, "pagerankLevelwiseOmp (static)");
+    // auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
+    // printRow(y, b0, c5, "pagerankLevelwiseOmp (incremental)");
+    // auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
+    // printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
-    auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
-    printRow(y, b0, b6, "pagerankLevelwiseCuda (static)");
-    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
-    printRow(y, b0, c6, "pagerankLevelwiseCuda (incremental)");
-    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
+    // auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
+    // printRow(y, b0, b6, "pagerankLevelwiseCuda (static)");
+    // auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
+    // printRow(y, b0, c6, "pagerankLevelwiseCuda (incremental)");
+    // auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
+    // printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
 
     // New graph is now old.
     xo = move(yo);

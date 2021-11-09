@@ -90,7 +90,7 @@ struct PagerankResult {
 
   // Get initial ranks (when no vertices affected for dynamic pagerank).
   template <class G>
-  PagerankResult<T> initial(const G& x, const vector<T>* q=nullptr) {
+  static PagerankResult<T> initial(const G& x, const vector<T>* q=nullptr) {
     int  N = x.order();
     auto a = q? *q : createContainer(x, T());
     fillAt(a, T(1)/N, x.vertices());

@@ -22,7 +22,7 @@ using std::swap;
 // -------------
 
 template <class T, class J>
-int pagerankLevelwiseOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, J&& ns, int N, T p, T E, int L, int EF) {
+int pagerankLevelwiseOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, const J& ns, int N, T p, T E, int L, int EF) {
   float l = 0;
   for (int n : ns) {
     if (n<=0) { i += -n; continue; }
@@ -53,7 +53,7 @@ PagerankResult<T> pagerankLevelwiseOmp(const G& x, const H& xt, const vector<T> 
   auto cs = joinUntilSize(sortedComponents(x, xt), MIN_COMPUTE_PR());
   auto ns = transformIter(cs, [&](const auto& c) { return c.size(); });
   auto ks = join(cs);
-  return pagerankOmp(xt, ks, 0, ns, pagerankLevelwiseOmpLoop<T>, q, o);
+  return pagerankOmp(xt, ks, 0, ns, pagerankLevelwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankLevelwiseOmp(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
@@ -76,7 +76,7 @@ PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const H& xt, const G& 
   auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PR());
   auto ns = transformIter(ds, [&](const auto& d) { return d.size(); });
   auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
-  return pagerankOmp(xt, ks, 0, ns, pagerankLevelwiseOmpLoop<T>, q, o);
+  return pagerankOmp(xt, ks, 0, ns, pagerankLevelwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {

@@ -22,7 +22,7 @@ using std::max;
 // -------------
 
 template <class T, class J>
-int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, const int *vdataD, int i, const J&& ns, int N, T p, T E, int L, int EF) {
+int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, const int *vdataD, int i, const J& ns, int N, T p, T E, int L, int EF) {
   int n = sumAbs(ns);
   int R = reduceSizeCu<T>(n);
   size_t R1 = R * sizeof(T);
@@ -60,11 +60,33 @@ PagerankResult<T> pagerankMonolithicCuda(const G& x, const H& xt, const vector<T
   };
   auto ks = vertices(xt, fm, fp); vector2d<int> cs {ks};
   auto ns = pagerankWave(xt, cs);
-  return pagerankCuda(xt, ks, 0, ns, pagerankMonolithicCudaLoop<T>, q, o);
+  return pagerankCuda(xt, ks, 0, ns, pagerankMonolithicCudaLoop<T, decltype(ns)>, q, o);
 }
-
 template <class G, class T=float>
 PagerankResult<T> pagerankMonolithicCuda(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto xt = transposeWithDegree(x);
   return pagerankMonolithicCuda(x, xt, q, o);
+}
+
+
+
+
+// PAGERANK (DYNAMIC)
+// ------------------
+
+template <class G, class H, class T=float>
+PagerankResult<T> pagerankMonolithicCudaDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
+  auto [ks, n] = dynamicVertices(x, xt, y, yt);
+  partition(ks.begin(), ks.begin()+n, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
+  if (n==0) return PagerankResult<T>::initial(x, q);
+  vector2d<int> cs {ks};
+  auto ns = pagerankWave(xt, cs);
+  return pagerankCuda(yt, ks, 0, ns, pagerankMonolithicCudaLoop<T, decltype(ns)>, q, o);
+}
+
+template <class G, class T=float>
+PagerankResult<T> pagerankMonolithicCudaDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
+  auto xt = transposeWithDegree(x);
+  auto yt = transposeWithDegree(y);
+  return pagerankMonolithicCudaDynamic(x, xt, y, yt, q, o);
 }

@@ -44,8 +44,9 @@ int pagerankMonolithicSeqLoop(vector<T>& a, vector<T>& r, vector<T>& c, const ve
 // @returns {ranks, iterations, time}
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankMonolithicSeq(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
-  int N = xt.order();
-  return pagerankSeq(xt, xt.vertices(), 0, N, pagerankMonolithicSeqLoop<T>, q, o);
+  int  N  = xt.order();
+  auto ks = vertices(xt);
+  return pagerankSeq(xt, ks, 0, N, pagerankMonolithicSeqLoop<T>, q, o);
 }
 
 template <class G, class T=float>
