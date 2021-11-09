@@ -92,12 +92,12 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
-    // auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
-    // printRow(y, b0, b6, "pagerankLevelwiseCuda (static)");
-    // auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
-    // printRow(y, b0, c6, "pagerankLevelwiseCuda (incremental)");
-    // auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
-    // printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
+    auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
+    printRow(y, b0, b6, "pagerankLevelwiseCuda (static)");
+    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
+    printRow(y, b0, c6, "pagerankLevelwiseCuda (incremental)");
+    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
+    printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
 
     // New graph is now old.
     xo = move(yo);
