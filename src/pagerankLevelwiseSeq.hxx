@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include "_main.hxx"
 #include "vertices.hxx"
 #include "edges.hxx"
 #include "csr.hxx"
