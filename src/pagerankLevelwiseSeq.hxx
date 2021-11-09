@@ -17,62 +17,15 @@ using std::swap;
 
 
 
-
-template <class T>
-inline T pagerankLevelwiseError(T E, int n, int N, int EF) {
-  return EF<=2? E*n/N : E;
-}
-
-
-template <class G, class H, class C>
-auto pagerankWaves(const G& w, const H& wt, const C& wcs, const G& x, const H& xt, const C& xcs) {
-  int W = wcs.size();
-  int X = xcs.size();
-  auto b = blockgraph(x, xcs);
-  vector<bool> dirty(X);
-  for (int u : b.vertices()) {
-    if (dirty[u]) continue;
-    if (findIndex(wcs, xcs[u])>=0 && componentsEqual(w, wt, xcs[u], x, xt, xcs[u])) continue;
-    dfsDo(b, u, [&](int v) { dirty[v] = true; });
-  }
-  vector<int> a(X);
-  for (int i=0; i<X; i++) {
-    int n = xcs[i].size();
-    a[i] = dirty[i]? n:-n;
-  }
-  return a;
-}
-
-
-template <class C>
-auto pagerankGroupComponents(const C& cs, const vector<int>& ws) {
-  vector<int> is, js;
-  for (int i=0; i<cs.size(); i++) {
-    if (ws[i]>=0) is.push_back(i);
-    else js.push_back(i);
-  }
-  auto a = joinAtUntilSize(cs, is, MIN_COMPUTE_SIZE_PR);
-  a.push_back(joinAt(cs, js));
-  return a;
-}
-
-
-template <class C>
-auto pagerankGroupWaves(const C& cs) {
-  vector<int> a;
-  for (int i=0; i<cs.size()-1; i++)
-    a.push_back(cs[i].size());
-  a.push_back(-cs.back().size());
-  return a;
-}
-
+// PAGERANK-LOOP
+// -------------
 
 template <class T, class J>
 int pagerankLevelwiseSeqLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, J&& ns, int N, T p, T E, int L, int EF) {
   float l = 0;
   for (int n : ns) {
     if (n<=0) { i += -n; continue; }
-    T np = T(n)/N, En = pagerankLevelwiseError(E, n, N, EF);
+    T np = T(n)/N, En = EF<=2? E*n/N : E;
     l += pagerankMonolithicSeqLoop(a, r, c, f, vfrom, efrom, i, n, N, p, En, L, EF)*np;
     swap(a, r);
     i += n;
@@ -97,7 +50,7 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   int  N  = xt.order();
   auto cs = joinUntilSize(sortedComponents(x, xt), MIN_COMPUTE_PR());
-  auto ns = pagerankLevelwiseWaves(cs);
+  auto ns = transformIter(cs, [&](const auto& c) { return c.size(); });
   auto ks = join(cs);
   return pagerankSeq(xt, ks, 0, ns, pagerankLevelwiseSeqLoop<T>, q, o);
 }
@@ -117,11 +70,11 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   auto cs = sortedComponents(y, yt);
   auto b  = blockgraph(x, cs);
-  auto [ics, nc] = dynamicComponentIndices(x, y, cs, b);
-  if (nc==0) return PagerankResult<T>::initial(xt, q);
-  auto cs = pagerankLevelwiseGroupComponents();  // PROGRAM DEBT!
-  auto ns = pagerankLevelwiseGroupWaves();       // PROGRAM DEBT!
-  auto ks = join(cs);
+  auto [is, n] = dynamicComponentIndices(x, y, cs, b);
+  if (n==0) return PagerankResult<T>::initial(xt, q);
+  auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PR());
+  auto ns = transformIter(ds, [&](const auto& d) { return d.size(); });
+  auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
   return pagerankSeq(xt, ks, 0, ns, pagerankLevelwiseSeqLoop<T>, q, o);
 }
 template <class G, class T=float>
