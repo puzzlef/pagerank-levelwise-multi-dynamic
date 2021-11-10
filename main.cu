@@ -19,7 +19,7 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 }
 
 void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
-  vector<float> r0, s0;
+  vector<float> r0, s0, r1, s1;
   vector<float> *init = nullptr;
   PagerankOptions<float> o = {repeat};
 
@@ -42,62 +42,122 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto ks = vertices(y);
     s0.resize(y.span());
 
-    // Adjust ranks.
+    // INSERTIONS:
+    // Adjust ranks for insertions.
     adjustRanks(s0, r0, ksOld, ks, 0.0f, float(ksOld.size())/ks.size(), 1.0f/ks.size());
 
     // Find nvGraph-based pagerank.
     auto b0 = pagerankNvgraph(y, yt, init, o);
-    printRow(y, b0, b0, "pagerankNvgraph (static)");
+    printRow(y, b0, b0, "I:pagerankNvgraph (static)");
     auto c0 = pagerankNvgraph(y, yt, &s0, o);
-    printRow(y, b0, c0, "pagerankNvgraph (incremental)");
+    printRow(y, b0, c0, "I:pagerankNvgraph (incremental)");
 
     // Find sequential Monolithic pagerank.
     auto b1 = pagerankMonolithicSeq(y, yt, init, o);
-    printRow(y, b0, b1, "pagerankMonolithicSeq (static)");
+    printRow(y, b0, b1, "I:pagerankMonolithicSeq (static)");
     auto c1 = pagerankMonolithicSeq(y, yt, &s0, o);
-    printRow(y, b0, c1, "pagerankMonolithicSeq (incremental)");
+    printRow(y, b0, c1, "I:pagerankMonolithicSeq (incremental)");
     auto d1 = pagerankMonolithicSeqDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d1, "pagerankMonolithicSeq (dynamic)");
+    printRow(y, b0, d1, "I:pagerankMonolithicSeq (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank.
     auto b2 = pagerankMonolithicOmp(y, yt, init, o);
-    printRow(y, b0, b2, "pagerankMonolithicOmp (static)");
+    printRow(y, b0, b2, "I:pagerankMonolithicOmp (static)");
     auto c2 = pagerankMonolithicOmp(y, yt, &s0, o);
-    printRow(y, b0, c2, "pagerankMonolithicOmp (incremental)");
+    printRow(y, b0, c2, "I:pagerankMonolithicOmp (incremental)");
     auto d2 = pagerankMonolithicOmpDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d2, "pagerankMonolithicOmp (dynamic)");
+    printRow(y, b0, d2, "I:pagerankMonolithicOmp (dynamic)");
 
     // Find CUDA-based Monolithic pagerank.
     auto b3 = pagerankMonolithicCuda(y, yt, init, o);
-    printRow(y, b0, b3, "pagerankMonolithicCuda (static)");
+    printRow(y, b0, b3, "I:pagerankMonolithicCuda (static)");
     auto c3 = pagerankMonolithicCuda(y, yt, &s0, o);
-    printRow(y, b0, c3, "pagerankMonolithicCuda (incremental)");
+    printRow(y, b0, c3, "I:pagerankMonolithicCuda (incremental)");
     auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d3, "pagerankMonolithicCuda (dynamic)");
+    printRow(y, b0, d3, "I:pagerankMonolithicCuda (dynamic)");
 
     // Find sequential Levelwise pagerank.
     auto b4 = pagerankLevelwiseSeq(y, yt, init, o);
-    printRow(y, b0, b4, "pagerankLevelwiseSeq (static)");
+    printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)");
     auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o);
-    printRow(y, b0, c4, "pagerankLevelwiseSeq (incremental)");
+    printRow(y, b0, c4, "I:pagerankLevelwiseSeq (incremental)");
     auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d4, "pagerankLevelwiseSeq (dynamic)");
+    printRow(y, b0, d4, "I:pagerankLevelwiseSeq (dynamic)");
 
     // Find OpenMP-based Levelwise pagerank.
     auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
-    printRow(y, b0, b5, "pagerankLevelwiseOmp (static)");
+    printRow(y, b0, b5, "I:pagerankLevelwiseOmp (static)");
     auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
-    printRow(y, b0, c5, "pagerankLevelwiseOmp (incremental)");
+    printRow(y, b0, c5, "I:pagerankLevelwiseOmp (incremental)");
     auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d5, "pagerankLevelwiseOmp (dynamic)");
+    printRow(y, b0, d5, "I:pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
     auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
-    printRow(y, b0, b6, "pagerankLevelwiseCuda (static)");
+    printRow(y, b0, b6, "I:pagerankLevelwiseCuda (static)");
     auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
-    printRow(y, b0, c6, "pagerankLevelwiseCuda (incremental)");
+    printRow(y, b0, c6, "I:pagerankLevelwiseCuda (incremental)");
     auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
-    printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
+    printRow(y, b0, d6, "I:pagerankLevelwiseCuda (dynamic)");
+
+    // DELETIONS:
+    // Adjust ranks for deletions.
+    s1 = b0.ranks; r1.resize(x.span());
+    adjustRanks(r1, s1, ks, ksOld, 0.0f, float(ks.size())/ksOld.size(), 1.0f/ksOld.size());
+
+    // Find nvGraph-based pagerank.
+    auto e0 = pagerankNvgraph(x, xt, init, o);
+    printRow(y, e0, e0, "D:pagerankNvgraph (static)");
+    auto f0 = pagerankNvgraph(x, xt, &r1, o);
+    printRow(y, e0, f0, "D:pagerankNvgraph (incremental)");
+
+    // Find sequential Monolithic pagerank.
+    auto e1 = pagerankMonolithicSeq(x, xt, init, o);
+    printRow(y, e0, e1, "D:pagerankMonolithicSeq (static)");
+    auto f1 = pagerankMonolithicSeq(x, xt, &r1, o);
+    printRow(y, e0, f1, "D:pagerankMonolithicSeq (incremental)");
+    auto g1 = pagerankMonolithicSeqDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g1, "D:pagerankMonolithicSeq (dynamic)");
+
+    // Find OpenMP-based Monolithic pagerank.
+    auto e2 = pagerankMonolithicOmp(x, xt, init, o);
+    printRow(y, e0, e2, "D:pagerankMonolithicOmp (static)");
+    auto f2 = pagerankMonolithicOmp(x, xt, &r1, o);
+    printRow(y, e0, f2, "D:pagerankMonolithicOmp (incremental)");
+    auto g2 = pagerankMonolithicOmpDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g2, "D:pagerankMonolithicOmp (dynamic)");
+
+    // Find CUDA-based Monolithic pagerank.
+    auto e3 = pagerankMonolithicCuda(x, xt, init, o);
+    printRow(y, e0, e3, "D:pagerankMonolithicCuda (static)");
+    auto f3 = pagerankMonolithicCuda(x, xt, &r1, o);
+    printRow(y, e0, f3, "D:pagerankMonolithicCuda (incremental)");
+    auto g3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g3, "D:pagerankMonolithicCuda (dynamic)");
+
+    // Find sequential Levelwise pagerank.
+    auto e4 = pagerankLevelwiseSeq(x, xt, init, o);
+    printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)");
+    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, o);
+    printRow(y, e0, f4, "D:pagerankLevelwiseSeq (incremental)");
+    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g4, "D:pagerankLevelwiseSeq (dynamic)");
+
+    // Find OpenMP-based Levelwise pagerank.
+    auto e5 = pagerankLevelwiseOmp(x, xt, init, o);
+    printRow(y, e0, e5, "D:pagerankLevelwiseOmp (static)");
+    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, o);
+    printRow(y, e0, f5, "D:pagerankLevelwiseOmp (incremental)");
+    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g5, "D:pagerankLevelwiseOmp (dynamic)");
+
+    // Find CUDA-based Levelwise pagerank.
+    auto e6 = pagerankLevelwiseCuda(x, xt, init, o);
+    printRow(y, e0, e6, "D:pagerankLevelwiseCuda (static)");
+    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, o);
+    printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)");
+    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, o);
+    printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)");
 
     // New graph is now old.
     xo = move(yo);
