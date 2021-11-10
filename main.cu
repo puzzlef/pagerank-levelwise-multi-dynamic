@@ -19,9 +19,10 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 }
 
 void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
+  enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   vector<float> r0, s0, r1, s1;
   vector<float> *init = nullptr;
-  PagerankOptions<float> o = {repeat};
+  PagerankOptions<float> o = {repeat, Li, true};
 
   DiGraph<> xo;
   stringstream s(data);
