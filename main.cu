@@ -19,10 +19,11 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 }
 
 void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
+  using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
-  vector<float> r0, s0, r1, s1;
-  vector<float> *init = nullptr;
-  PagerankOptions<float> o = {repeat, Li, true};
+  vector<T> r0, s0, r1, s1;
+  vector<T> *init = nullptr;
+  PagerankOptions<T> o = {repeat, Li, true};
 
   DiGraph<> xo;
   stringstream s(data);
@@ -33,7 +34,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto xt = transposeWithDegree(x);
     auto ksOld = vertices(x);
     auto a0 = pagerankNvgraph(x, xt, init, o);
-    auto r0 = move(a0.ranks);
+    auto r0 = a0.ranks;
 
     // Read edges for this batch.
     auto yo = copy(xo);
@@ -41,11 +42,13 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
-    s0.resize(y.span());
+    vector<T> s0(y.span());
+    int X = ksOld.size();
+    int Y = ks.size();
 
     // INSERTIONS:
     // Adjust ranks for insertions.
-    adjustRanks(s0, r0, ksOld, ks, 0.0f, float(ksOld.size())/ks.size(), 1.0f/ks.size());
+    adjustRanks(s0, r0, ksOld, ks, 0.0f, float(X)/(Y+1), 1.0f/(Y+1));
 
     // Find nvGraph-based pagerank.
     auto b0 = pagerankNvgraph(y, yt, init, o);
@@ -103,8 +106,9 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
 
     // DELETIONS:
     // Adjust ranks for deletions.
-    s1 = b0.ranks; r1.resize(x.span());
-    adjustRanks(r1, s1, ks, ksOld, 0.0f, float(ks.size())/ksOld.size(), 1.0f/ksOld.size());
+    auto s1 = b0.ranks;
+    vector<T> r1(x.span());
+    adjustRanks(r1, s1, ks, ksOld, 0.0f, float(Y)/(X+1), 1.0f/(X+1));
 
     // Find nvGraph-based pagerank.
     auto e0 = pagerankNvgraph(x, xt, init, o);

@@ -21,11 +21,12 @@ using std::make_pair;
 
 template <class T, class J>
 void adjustRanks(vector<T>& a, const vector<T>& r, const J& ks0, const J& ks1, T radd, T rmul, T rset) {
-  auto ksNew = setDifference(ks1, ks0);
+  unordered_set<int> kt0(ks0.begin(), ks0.end());
+  unordered_set<int> kt1(ks1.begin(), ks1.end());
   for (int k : ks0)
-    a[k] = (r[k]+radd)*rmul;
-  for (int k : ksNew)
-    a[k] = rset;
+    if (kt1.count(k)>0)  a[k] = (r[k]+radd)*rmul;  // if vertex not removed
+  for (int k : ks1)
+    if (kt0.count(k)==0) a[k] = rset;              // if vertex added
 }
 
 template <class T, class J>
