@@ -52,7 +52,7 @@ int pagerankLevelwiseCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD,
 // @returns {ranks, iterations, time}
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseCuda(const G& x, const H& xt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
-  int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(yt, q);
+  int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
   auto cs = joinUntilSize(sortedComponents(x, xt), MIN_COMPUTE_PRC());
   forEach(cs, [&](auto& ks) { pagerankPartition(xt, ks); });
   auto ns = pagerankPairWave(xt, cs);
@@ -73,7 +73,7 @@ PagerankResult<T> pagerankLevelwiseCuda(const G& x, const vector<T> *q=nullptr, 
 
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
-  int  N  = xt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
+  int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
   auto cs = sortedComponents(y, yt);
   auto b  = blockgraph(y, cs);
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
