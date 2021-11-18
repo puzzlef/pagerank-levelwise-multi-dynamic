@@ -171,7 +171,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
 
 
 void runPagerank(const string& data, int repeat) {
-  int M = countLines(data), steps = 100;
+  int M = countLines(data), steps = 10;
   printf("Temporal edges: %d\n", M);
   for (int batch=10, i=0; batch<M; batch*=i&1? 2:5, i++) {
     int skip = max(M/steps - batch, 0);
