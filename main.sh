@@ -11,10 +11,16 @@ cd $src
 
 # Run
 nvcc -std=c++17 -Xcompiler -fopenmp -lnvgraph -O3 main.cu
-stdbuf --output=L ./a.out ~/data/email-Eu-core-temporal.txt 2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/CollegeMsg.txt             2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/email-Eu-core-temporal.txt 2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/sx-mathoverflow.txt        2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/sx-askubuntu.txt           2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-askubuntu-a2q.txt       2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-askubuntu-c2a.txt       2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-askubuntu-c2q.txt       2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/sx-superuser.txt           2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-superuser-a2q.txt       2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-superuser-c2a.txt       2>&1 | tee -a "$out"
+stdbuf --output=L ./a.out ~/data/sx-superuser-c2q.txt       2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/wiki-talk-temporal.txt     2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/sx-stackoverflow.txt       2>&1 | tee -a "$out"
