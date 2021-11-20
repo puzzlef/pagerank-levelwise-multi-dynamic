@@ -87,7 +87,7 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
   auto cs = components(y, yt);
   auto b  = blockgraph(y, cs);
-  sortComponents(cs, b):
+  sortComponents(cs, b);
   return pagerankLevelwiseOmpDynamic(x, xt, y, yt, q, o, PagerankData<G>(move(cs), move(b)));
 }
 template <class G, class T=float>

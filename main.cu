@@ -20,7 +20,7 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 
 void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
   using T = float;
-  using G = typename DiGraph<>;
+  using G = DiGraph<>;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
@@ -85,7 +85,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto cs = components(y, yt);
     auto b  = blockgraph(y, cs);
     sortComponents(cs, b);
-    PagerankData<G> D(move(cs), move(b));
+    PagerankData<G> D {move(cs), move(b)};
     auto b4 = pagerankLevelwiseSeq(y, yt, init, o, D);
     printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)");
     auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o, D);
@@ -149,7 +149,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto ds = components(x, xt);
     auto c  = blockgraph(x, ds);
     sortComponents(ds, c);
-    PagerankData<G> E(move(ds), move(c));
+    PagerankData<G> E {move(ds), move(c)};
     auto e4 = pagerankLevelwiseSeq(x, xt, init, o, E);
     printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)");
     auto f4 = pagerankLevelwiseSeq(x, xt, &r1, o, E);
