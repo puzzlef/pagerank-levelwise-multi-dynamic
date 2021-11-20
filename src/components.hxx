@@ -79,10 +79,15 @@ auto blockgraph(const G& x, const vector2d<int>& cs) {
 // -----------------
 
 template <class G>
-auto sortedComponents(const G& x, vector2d<int> cs) {
-  auto b = blockgraph(x, cs);
+void sortComponents(vector2d<int>& cs, const G& b) {
   auto bks = topologicalSort(b);
-  reorder(cs, bks);
+  reorderDirty(cs, bks);
+}
+
+template <class G>
+auto sortedComponents(const G& x, const vector2d<int>& cs) {
+  auto b = blockgraph(x, cs);
+  sortComponents(cs, b);
   return cs;
 }
 

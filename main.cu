@@ -20,6 +20,7 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 
 void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
   using T = float;
+  using G = typename DiGraph<>;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
@@ -81,27 +82,31 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, b0, d3, "I:pagerankMonolithicCuda (dynamic)");
 
     // Find sequential Levelwise pagerank.
-    auto b4 = pagerankLevelwiseSeq(y, yt, init, o);
+    auto cs = components(y, yt);
+    auto b  = blockgraph(y, cs);
+    sortComponents(cs, b);
+    PagerankData<G> D(move(cs), move(b));
+    auto b4 = pagerankLevelwiseSeq(y, yt, init, o, D);
     printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)");
-    auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o);
+    auto c4 = pagerankLevelwiseSeq(y, yt, &s0, o, D);
     printRow(y, b0, c4, "I:pagerankLevelwiseSeq (incremental)");
-    auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, o);
+    auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, o, D);
     printRow(y, b0, d4, "I:pagerankLevelwiseSeq (dynamic)");
 
     // Find OpenMP-based Levelwise pagerank.
-    auto b5 = pagerankLevelwiseOmp(y, yt, init, o);
+    auto b5 = pagerankLevelwiseOmp(y, yt, init, o, D);
     printRow(y, b0, b5, "I:pagerankLevelwiseOmp (static)");
-    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o);
+    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, o, D);
     printRow(y, b0, c5, "I:pagerankLevelwiseOmp (incremental)");
-    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o);
+    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, o, D);
     printRow(y, b0, d5, "I:pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
-    auto b6 = pagerankLevelwiseCuda(y, yt, init, o);
+    auto b6 = pagerankLevelwiseCuda(y, yt, init, o, D);
     printRow(y, b0, b6, "I:pagerankLevelwiseCuda (static)");
-    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o);
+    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, o, D);
     printRow(y, b0, c6, "I:pagerankLevelwiseCuda (incremental)");
-    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o);
+    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, o, D);
     printRow(y, b0, d6, "I:pagerankLevelwiseCuda (dynamic)");
 
     // DELETIONS:
@@ -141,27 +146,31 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, e0, g3, "D:pagerankMonolithicCuda (dynamic)");
 
     // Find sequential Levelwise pagerank.
-    auto e4 = pagerankLevelwiseSeq(x, xt, init, o);
+    auto ds = components(x, xt);
+    auto c  = blockgraph(x, ds);
+    sortComponents(ds, c);
+    PagerankData<G> E(move(ds), move(c));
+    auto e4 = pagerankLevelwiseSeq(x, xt, init, o, E);
     printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)");
-    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, o);
+    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, o, E);
     printRow(y, e0, f4, "D:pagerankLevelwiseSeq (incremental)");
-    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, o);
+    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, o, E);
     printRow(y, e0, g4, "D:pagerankLevelwiseSeq (dynamic)");
 
     // Find OpenMP-based Levelwise pagerank.
-    auto e5 = pagerankLevelwiseOmp(x, xt, init, o);
+    auto e5 = pagerankLevelwiseOmp(x, xt, init, o, E);
     printRow(y, e0, e5, "D:pagerankLevelwiseOmp (static)");
-    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, o);
+    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, o, E);
     printRow(y, e0, f5, "D:pagerankLevelwiseOmp (incremental)");
-    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, o);
+    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, o, E);
     printRow(y, e0, g5, "D:pagerankLevelwiseOmp (dynamic)");
 
     // Find CUDA-based Levelwise pagerank.
-    auto e6 = pagerankLevelwiseCuda(x, xt, init, o);
+    auto e6 = pagerankLevelwiseCuda(x, xt, init, o, E);
     printRow(y, e0, e6, "D:pagerankLevelwiseCuda (static)");
-    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, o);
+    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, o, E);
     printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)");
-    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, o);
+    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, o, E);
     printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)");
 
     // New graph is now old.

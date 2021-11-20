@@ -97,3 +97,15 @@ struct PagerankResult {
     return {a, 0, 0};
   }
 };
+
+
+
+
+// PAGERANK-DATA
+// -------------
+
+template <class G>
+struct PagerankData {
+  vector2d<int> sortedComponents;
+  G blockgraph;
+};

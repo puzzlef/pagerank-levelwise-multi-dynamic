@@ -59,5 +59,8 @@ bool retry(F fn, int N=2) {
 #define CMOVE(c, t, f) \
   ((c)? move(t) : (f))
 
-#define CVMOVE(t, f) \
+#define CMOVE_VECTOR(t, f) \
   CMOVE(!(t).empty(), t, f)
+
+#define CMOVE_GRAPH(t, f) \
+  CMOVE((t).order()>0, t, f)
