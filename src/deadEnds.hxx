@@ -8,11 +8,19 @@ using std::unordered_set;
 
 
 
+// IS-DEAD-END
+// -----------
+
 template <class G>
 bool isDeadEnd(const G& x, int u) {
   return x.degree(u) == 0;
 }
 
+
+
+
+// DEAD-ENDS
+// ---------
 
 template <class G, class F>
 void deadEndsForEach(const G& x, F fn) {
@@ -27,6 +35,18 @@ auto deadEnds(const G& x) {
   return a;
 }
 
+template <class G>
+int deadEndCount(const G& x) {
+  int a = 0; deadEndsForEach(x, [&](int u) { ++a; });
+  return a;
+}
+
+
+
+
+// RECURSIVE DEAD-ENDS
+// -------------------
+// Vertices that can become dead ends if existing ones are removed.
 
 template <class G, class F>
 auto recursiveDeadEndsForEach(const G& x, F fn) {
@@ -45,5 +65,11 @@ auto recursiveDeadEndsForEach(const G& x, F fn) {
 template <class G>
 auto recursiveDeadEnds(const G& x) {
   vector<int> a; recursiveDeadEndsForEach(x, [&](int u) { a.push_back(u); });
+  return a;
+}
+
+template <class G>
+int recursiveDeadEndCount(const G& x) {
+  int a = 0; recursiveDeadEndsForEach(x, [&](int u) { ++a; });
   return a;
 }
