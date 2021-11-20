@@ -48,3 +48,16 @@ bool retry(F fn, int N=2) {
     if (fn()) return true;
   return false;
 }
+
+
+
+
+// MOVE
+// ----
+// Conditional move, otherwise value.
+
+#define CMOVE(c, t, f) \
+  ((c)? move(t) : (f))
+
+#define CVMOVE(t, f) \
+  CMOVE(!(t).empty(), t, f)
