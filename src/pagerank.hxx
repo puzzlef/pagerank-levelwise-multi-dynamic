@@ -46,9 +46,9 @@ constexpr int SWITCH_LIMIT_PRC()  noexcept { return 32; }
 
 // For levelwise pagerank
 template <class T=float>
-constexpr int MIN_COMPUTE_PR()  noexcept { return 10000; }  // 10
+constexpr int MIN_COMPUTE_PR()  noexcept { return 1000000; }  // 10
 template <class T=float>
-constexpr int MIN_COMPUTE_PRC() noexcept { return 10000; }  // 5000000
+constexpr int MIN_COMPUTE_PRC() noexcept { return 1000000; }  // 5000000
 
 
 
