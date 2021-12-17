@@ -40,7 +40,7 @@ PagerankResult<T> pagerankLevelwiseCuda(const G& x, const H& xt, const vector<T>
   auto gs = levelwiseGroupedComponentsFrom(cs, bt);
   forEach(gs, [&](auto& g) { pagerankPartition(xt, g); });
   auto ns = pagerankPairWave(xt, gs);
-  auto ks = join(gs);
+  auto ks = join<int>(gs);
   return pagerankCuda(xt, ks, 0, ns, pagerankComponentwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
@@ -67,15 +67,15 @@ PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const H& xt, const G&
   const auto& b  = D.blockgraph;
   int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
   auto bt = transpose(b);
-  auto ds = levelwiseComponentsFrom(cs, bt):
+  auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto fn = [&](const auto& ig, int i) { return ig.empty() || ig.back()==i; };
-  auto ig = joinIf(sliceIter(is, 0, n), fn);
+  auto ig = groupIf<int>(sliceIter(is, 0, n), fn);
   auto gs = joinAt2d(ds, ig);
   forEach(gs, [&](auto& g) { pagerankPartition(yt, g); });
   auto ns = pagerankPairWave(yt, gs);
-  auto ks = join(gs); joinAt(ks, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
   return pagerankCuda(yt, ks, 0, ns, pagerankComponentwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>

@@ -39,9 +39,10 @@ auto topologicalSort(const G& x) {
 
 template <class H, class F>
 void levelwiseSortDo(vector<bool>& vis, const H& xt, F fn) {
-  auto fvis = [&](int u) { return vis[u]; };
   for (int u : xt.vertices()) {
-    if (vis[u] || !allOf(xt.edges(u), fvis)) continue;
+    if (vis[u]) continue;
+    for (int v : xt.edges(u))
+      if (!vis[v]) continue;
     vis[u] = true; fn(u);
   }
 }
@@ -153,7 +154,7 @@ auto levelwiseGroupedComponentsFrom(const vector2d<int>& cs, const H& bt) {
   vector2d<int> a;
   auto bgs = levelwiseGroups(bt);
   for (const auto& g : bgs)
-    a.push_back(joinAt(cs, g));
+    a.push_back(joinAt<int>(cs, g));
   return a;
 }
 

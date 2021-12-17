@@ -54,9 +54,9 @@ PagerankResult<T> pagerankComponentwiseOmp(const G& x, const H& xt, const vector
   const auto& b  = D.blockgraph;
   int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
   auto ds = topologicalComponentsFrom(cs, b);
-  auto gs = joinUntilSize(ds, o.minCompute);
+  auto gs = joinUntilSize<int>(ds, o.minCompute);
   auto ns = transformIter(gs, [&](const auto& c) { return c.size(); });
-  auto ks = join(gs);
+  auto ks = join<int>(gs);
   return pagerankOmp(xt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
@@ -84,9 +84,9 @@ PagerankResult<T> pagerankComponentwiseOmpDynamic(const G& x, const H& xt, const
   int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
   auto ds = topologicalComponentsFrom(cs, b);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto gs = joinAtUntilSize(ds, sliceIter(is, 0, n), o.minCompute);
+  auto gs = joinAtUntilSize<int>(ds, sliceIter(is, 0, n), o.minCompute);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
-  auto ks = join(gs); joinAt(ks, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
   return pagerankOmp(yt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>

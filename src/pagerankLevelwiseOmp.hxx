@@ -37,7 +37,7 @@ PagerankResult<T> pagerankLevelwiseOmp(const G& x, const H& xt, const vector<T> 
   auto bt = transpose(b);
   auto gs = levelwiseGroupedComponentsFrom(cs, bt);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
-  auto ks = join(gs);
+  auto ks = join<int>(gs);
   return pagerankOmp(xt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
@@ -64,14 +64,14 @@ PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const H& xt, const G& 
   const auto& b  = D.blockgraph;
   int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
   auto bt = transpose(b);
-  auto ds = levelwiseComponentsFrom(cs, bt):
+  auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto fn = [&](const auto& ig, int i) { return ig.empty() || ig.back()==i; };
-  auto ig = joinIf(sliceIter(is, 0, n), fn);
-  auto gs = joinAt2d(ds, ig);
+  auto ig = groupIf<int>(sliceIter(is, 0, n), fn);
+  auto gs = joinAt2d<int>(ds, ig);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
-  auto ks = join(gs); joinAt(ks, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
   return pagerankOmp(yt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>

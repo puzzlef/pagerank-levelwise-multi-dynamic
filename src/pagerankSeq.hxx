@@ -19,8 +19,8 @@ using std::swap;
 template <class G, class H, class T>
 auto pagerankVertices(const G& x, const H& xt, const PagerankOptions<T>& o) {
   if (!o.splitComponents) return vertices(xt);
-  if (!o.sortComponents)  return join(components(x, xt));
-  return join(topologicalComponents(x, xt));
+  if (!o.sortComponents)  return join<int>(components(x, xt));
+  return join<int>(topologicalComponents(x, xt));
 }
 
 
@@ -31,7 +31,7 @@ auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, c
   auto b  = blockgraph(y, cs);
   if (o.sortComponents) topologicalComponentsTo(cs, b);
   auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
-  auto ks = joinAt(cs, sliceIter(is, 0, n)); int nv = ks.size();
+  auto ks = joinAt<int>(cs, sliceIter(is, 0, n)); size_t nv = ks.size();
   joinAt(ks, cs, sliceIter(is, n));
   return make_pair(ks, nv);
 }
@@ -56,7 +56,7 @@ auto pagerankDynamicComponentsDefault(const G& x, const H& xt, const G& y, const
   auto [ks, n] = dynamicVertices(x, xt, y, yt);
   a.push_back(vector<int>(ks.begin(), ks.begin()+n));
   a.push_back(vector<int>(ks.begin()+n, ks.end()));
-  return make_pair(a, 1);
+  return make_pair(a, size_t(1));
 }
 
 template <class G, class H, class T>

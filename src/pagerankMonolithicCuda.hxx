@@ -57,7 +57,7 @@ PagerankResult<T> pagerankMonolithicCuda(const G& x, const H& xt, const vector<T
   int  N  = xt.order();    if (N==0) return PagerankResult<T>::initial(xt, q);
   auto cs = pagerankCudaComponents(x, xt, o);
   auto ns = pagerankComponentWave(xt, cs);
-  auto ks = join(cs);
+  auto ks = join<int>(cs);
   return pagerankCuda(xt, ks, 0, ns, pagerankMonolithicCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
@@ -76,8 +76,8 @@ template <class G, class H, class T=float>
 PagerankResult<T> pagerankMonolithicCudaDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
   int  N  = yt.order();                                           if (N==0) return PagerankResult<T>::initial(yt, q);
   auto [cs, n] = pagerankCudaDynamicComponents(x, xt, y, yt, o);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto ns = pagerankWave(yt, sliceIter(cs, 0, n));
-  auto ks = join(cs);
+  auto ns = pagerankComponentWave(yt, sliceIter(cs, 0, n));
+  auto ks = join<int>(cs);
   return pagerankCuda(yt, ks, 0, ns, pagerankMonolithicCudaLoop<T, decltype(ns)>, q, o);
 }
 

@@ -26,6 +26,7 @@ using std::back_inserter;
 
 // FOR-EACH
 // --------
+// Perform a sale.
 
 template <class I, class F>
 auto forEach(I ib, I ie, F fn) {
@@ -47,6 +48,7 @@ auto forEach(J& x, F fn) {
 
 // ANY-OF
 // ------
+// Is anything useful there?
 
 template <class I, class F>
 auto anyOf(I ib, I ie, F fn) {
@@ -63,6 +65,7 @@ auto anyOf(const J& x, F fn) {
 
 // ALL-OF
 // ------
+// Is everything there?
 
 template <class I, class F>
 auto allOf(I ib, I ie, F fn) {
@@ -79,6 +82,7 @@ auto allOf(const J& x, F fn) {
 
 // FIND
 // ----
+// Find a business or its address.
 
 template <class J, class T>
 auto find(const J& x, const T& v) {
@@ -123,6 +127,7 @@ int findIfEqIndex(const J& x, F fn) {
 
 // LOWER-BOUND
 // -----------
+// Find closest business, or its address.
 
 template <class J, class T>
 auto lowerBound(const J& x, const T& v) {
@@ -167,6 +172,7 @@ int lowerBoundEqIndex(const J& x, const T& v, F fl, G fe) {
 
 // COUNT
 // -----
+// Count businesses in a sector.
 
 template <class J, class T>
 int count(const J& x, const T& v) {
@@ -189,11 +195,12 @@ int countIf(const J& x, F fn) {
 
 // COUNT-ALL
 // ---------
+// Count businesses in each sector.
 
 template <class I>
 auto countAll(I ib, I ie) {
-  using T = typename I::value_type;
-  unordered_map<T, int> a;
+  using K = typename iterator_traits<I>::value_type;
+  unordered_map<K, int> a;
   for_each(ib, ie, [&](const auto& v) { a[v]++; });
   return a;
 }
@@ -208,13 +215,14 @@ auto countAll(const J& x) {
 
 // INDICES
 // -------
+// Keep the address of each business (yellow pages).
 
 template <class I>
 auto indices(I ib, I ie) {
   using K = typename iterator_traits<I>::value_type;
-  unordered_map<K, int> a; int i = 0;
+  unordered_map<K, int> a; int i = -1;
   for (I it=ib; it!=ie; ++it)
-    a[*it] = i++;
+    a[*it] = ++i;
   return a;
 }
 
@@ -226,32 +234,18 @@ auto indices(const J& x) {
 
 
 
-// IDENTIFIERS
-// -----------
-
-template <class I>
-auto identifiers(I ib, I ie) {
-  using K = typename iterator_traits<I>::value_type;
-  unordered_map<K, int> a; int i = 0;
-  for (I it=ib; it!=ie; ++it)
-    if (a.count(*it)==0) a[*it] = i++;
-  return a;
-}
-
-template <class J>
-auto identifiers(const J& x) {
-  return identifiers(x.begin(), x.end());
-}
-
-
-
-
 // TRANSFORM
 // ---------
+// Switch around your portfolio.
+
+template <class J, class K, class F>
+void transform(const J& x, K& a, F fn) {
+  transform(x.begin(), x.end(), a.begin(), fn);
+}
 
 template <class J, class F>
-void transform(J& x, F fn) {
-  transform(x.begin(), x.end(), x.begin(), fn);
+void transform(J& a, F fn) {
+  transform(a, a, fn);
 }
 
 
@@ -259,6 +253,7 @@ void transform(J& x, F fn) {
 
 // SORT
 // ----
+// Arrange your portfolio by ROCE.
 
 template <class J>
 void sort(J& x) {

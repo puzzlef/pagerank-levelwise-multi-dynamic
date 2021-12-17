@@ -57,10 +57,10 @@ PagerankResult<T> pagerankComponentwiseCuda(const G& x, const H& xt, const vecto
   const auto& b  = D.blockgraph;
   int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
   auto ds = topologicalComponentsFrom(cs, b);
-  auto gs = joinUntilSize(ds, o.minCompute);
+  auto gs = joinUntilSize<int>(ds, o.minCompute);
   forEach(gs, [&](auto& g) { pagerankPartition(xt, g); });
   auto ns = pagerankPairWave(xt, gs);
-  auto ks = join(gs);
+  auto ks = join<int>(gs);
   return pagerankCuda(xt, ks, 0, ns, pagerankComponentwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
@@ -88,10 +88,10 @@ PagerankResult<T> pagerankComponentwiseCudaDynamic(const G& x, const H& xt, cons
   int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
   auto ds = topologicalComponentsFrom(cs, b);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto gs = joinAtUntilSize(ds, sliceIter(is, 0, n), o.minCompute);
+  auto gs = joinAtUntilSize<int>(ds, sliceIter(is, 0, n), o.minCompute);
   forEach(gs, [&](auto& g) { pagerankPartition(yt, g); });
   auto ns = pagerankPairWave(yt, gs);
-  auto ks = join(gs); joinAt(gs, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(gs, ds, sliceIter(is, n));
   return pagerankCuda(yt, ks, 0, ns, pagerankComponentwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>

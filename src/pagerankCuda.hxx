@@ -21,13 +21,30 @@ using std::max;
 
 
 
+// PAGERANK-PARTITON
+// -----------------
+
+template <class H>
+void pagerankPartition(const H& xt, vector<int>& ks, int i, int n) {
+  auto ib = ks.begin()+i, ie = ib+n;
+  partition(ib, ie, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
+}
+
+template <class H>
+void pagerankPartition(const H& xt, vector<int>& ks) {
+  pagerankPartition(xt, ks, 0, ks.size());
+}
+
+
+
+
 // PAGERANK-COMPONENTS
 // -------------------
 
 template <class G, class H, class T>
 auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
   auto cs = pagerankComponents(x, xt, o);
-  auto a  = joinUntilSize(cs, o.minCompute);
+  auto a  = joinUntilSize<int>(cs, o.minCompute);
   for (auto& ks : a)
     pagerankPartition(xt, ks);
   return a;
@@ -37,10 +54,10 @@ auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o
 template <class G, class H, class T>
 auto pagerankCudaDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
   auto [cs, n] = pagerankDynamicComponents(x, xt, y, yt, o);
-  auto a  = joinUntilSize(sliceIter(cs, 0, n), o.minCompute);
+  auto a = joinUntilSize<int>(sliceIter(cs, 0, n), o.minCompute);
   for (auto& ks : a)
     pagerankPartition(xt, ks);
-  a.push_back(join(sliceIter(cs, n)));
+  a.push_back(join<int>(sliceIter(cs, n)));
   return make_pair(a, a.size()-1);
 }
 
@@ -147,23 +164,6 @@ int pagerankSwitchPoint(const H& xt, const J& ks) {
 
 
 
-// PAGERANK-PARTITON
-// -----------------
-
-template <class H>
-void pagerankPartition(const H& xt, vector<int>& ks, int i, int n) {
-  auto ib = ks.begin()+i, ie = ks.begin()+i+n;
-  partition(ib, ie, [&](int u) { return xt.degree(u) < SWITCH_DEGREE_PRC(); });
-}
-
-template <class H>
-void pagerankPartition(const H& xt, vector<int>& ks) {
-  pagerankPartition(xt, ks, 0, ks.size());
-}
-
-
-
-
 // PAGERANK-WAVE
 // -------------
 
@@ -203,14 +203,14 @@ auto pagerankWave(const H& xt, const J& ks) {
   return a;
 }
 
-template <class H>
-void pagerankWave(vector<int>& a, const H& xt, const vector2d<int>& cs) {
+template <class H, class J>
+void pagerankComponentWave(vector<int>& a, const H& xt, const J& cs) {
   for (const auto& ks : cs)
     pagerankWave(a, xt, ks);
 }
-template <class H>
-auto pagerankWave(const H& xt, const vector2d<int>& cs) {
-  vector<int> a; pagerankWave(a, xt, cs);
+template <class H, class J>
+auto pagerankComponentWave(const H& xt, const J& cs) {
+  vector<int> a; pagerankComponentWave(a, xt, cs);
   return a;
 }
 

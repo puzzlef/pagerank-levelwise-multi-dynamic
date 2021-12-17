@@ -63,8 +63,8 @@ PagerankResult<T> pagerankMonolithicOmp(const G& x, const vector<T> *q=nullptr, 
 
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankMonolithicOmpDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
-  int  N = yt.order();                                   if (N==0) return PagerankResult<T>::initial(yt, q);
-  auto [ks, n] = pagerankDynamicVertices(x, xt, y, yt);  if (n==0) return PagerankResult<T>::initial(yt, q);
+  int  N = yt.order();                                      if (N==0) return PagerankResult<T>::initial(yt, q);
+  auto [ks, n] = pagerankDynamicVertices(x, xt, y, yt, o);  if (n==0) return PagerankResult<T>::initial(yt, q);
   return pagerankOmp(yt, ks, 0, n, pagerankMonolithicOmpLoop<T>, q, o);
 }
 
