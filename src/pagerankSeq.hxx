@@ -59,7 +59,7 @@ T pagerankError(const vector<T>& x, const vector<T>& y, int i, int N, int EF) {
 
 // PAGERANK
 // --------
-// For Monolithic / Levelwise PageRank.
+// For Monolithic / Componentwise PageRank.
 
 template <class H, class J, class M, class FL, class T=float>
 PagerankResult<T> pagerankSeq(const H& xt, const J& ks, int i, const M& ns, FL fl, const vector<T> *q, const PagerankOptions<T>& o) {

@@ -217,7 +217,7 @@ T pagerankErrorReduce(const T *x, int N, int EF) {
 
 // PAGERANK
 // --------
-// For Monolithic / Levelwise PageRank.
+// For Monolithic / Componentwise PageRank.
 
 template <class H, class J, class M, class FL, class T=float>
 PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL fl, const vector<T> *q, const PagerankOptions<T>& o) {
