@@ -222,6 +222,24 @@ auto joinAt(const vector2d<T>& xs, const J& is) {
 
 
 
+// COPY-AT
+// -------
+
+template <class T, class J>
+void copyAt(vector<T>& a, const vector<T>& xs, const J& is) {
+  for (const auto& i : is)
+    a.push_back(xs[i]);
+}
+
+template <class T, class J>
+auto copyAt(const vector<T>& xs, const J& is) {
+  vector<T> a; copyAt(a, xs, is);
+  return a;
+}
+
+
+
+
 // GATHER
 // ------
 
