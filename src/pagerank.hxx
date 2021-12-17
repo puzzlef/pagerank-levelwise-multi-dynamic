@@ -60,13 +60,14 @@ template <class T>
 struct PagerankOptions {
   int  repeat;
   int  toleranceNorm;
+  int  minCompute;
   bool splitComponents;
   T    damping;
   T    tolerance;
   int  maxIterations;
 
-  PagerankOptions(int repeat=1, int toleranceNorm=1, bool splitComponents=false, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
-  repeat(repeat), toleranceNorm(toleranceNorm), splitComponents(splitComponents), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
+  PagerankOptions(int repeat=1, int toleranceNorm=1, int minCompute=1, bool splitComponents=false, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
+  repeat(repeat), toleranceNorm(toleranceNorm), minCompute(minCompute), splitComponents(splitComponents), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
 };
 
 
@@ -106,6 +107,6 @@ struct PagerankResult {
 
 template <class G>
 struct PagerankData {
-  vector2d<int> sortedComponents;
+  vector2d<int> components;
   G blockgraph;
 };

@@ -7,6 +7,7 @@
 #include "csr.hxx"
 #include "transpose.hxx"
 #include "components.hxx"
+#include "sort.hxx"
 #include "dynamic.hxx"
 #include "pagerank.hxx"
 #include "pagerankOmp.hxx"
@@ -49,16 +50,20 @@ int pagerankComponentwiseOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const
 // @returns {ranks, iterations, time}
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankComponentwiseOmp(const G& x, const H& xt, const vector<T> *q, const PagerankOptions<T>& o, const PagerankData<G>& D) {
+  const auto& cs = D.components;
+  const auto& b  = D.blockgraph;
   int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
-  auto cs = joinUntilSize(D.sortedComponents, MIN_COMPUTE_PR());
-  auto ns = transformIter(cs, [&](const auto& c) { return c.size(); });
-  auto ks = join(cs);
+  auto ds = topologicalComponentsFrom(cs, b);
+  auto gs = joinUntilSize(ds, o.minCompute);
+  auto ns = transformIter(gs, [&](const auto& c) { return c.size(); });
+  auto ks = join(gs);
   return pagerankOmp(xt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankComponentwiseOmp(const G& x, const H& xt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
-  auto cs = sortedComponents(x, xt);
-  return pagerankComponentwiseOmp(x, xt, q, o, PagerankData<G>(move(cs)));
+  auto cs = components(x, xt);
+  auto b  = blockgraph(x, cs);
+  return pagerankComponentwiseOmp(x, xt, q, o, PagerankData<G>(cs, b));
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankComponentwiseOmp(const G& x, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {
@@ -74,21 +79,21 @@ PagerankResult<T> pagerankComponentwiseOmp(const G& x, const vector<T> *q=nullpt
 
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankComponentwiseOmpDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q, const PagerankOptions<T>& o, const PagerankData<G>& D) {
-  int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
-  const auto& cs = D.sortedComponents;
+  const auto& cs = D.components;
   const auto& b  = D.blockgraph;
-  auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto ds = joinAtUntilSize(cs, sliceIter(is, 0, n), MIN_COMPUTE_PR());
-  auto ns = transformIter(ds, [&](const auto& d) { return d.size(); });
-  auto ks = join(ds); joinAt(ks, cs, sliceIter(is, n));
+  int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
+  auto ds = topologicalComponentsFrom(cs, b);
+  auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
+  auto gs = joinAtUntilSize(ds, sliceIter(is, 0, n), o.minCompute);
+  auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
+  auto ks = join(gs); joinAt(ks, ds, sliceIter(is, n));
   return pagerankOmp(yt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankComponentwiseOmpDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
   auto cs = components(y, yt);
   auto b  = blockgraph(y, cs);
-  sortComponents(cs, b);
-  return pagerankComponentwiseOmpDynamic(x, xt, y, yt, q, o, PagerankData<G>(move(cs), move(b)));
+  return pagerankComponentwiseOmpDynamic(x, xt, y, yt, q, o, PagerankData<G>(cs, b));
 }
 template <class G, class T=float>
 PagerankResult<T> pagerankComponentwiseOmpDynamic(const G& x, const G& y, const vector<T> *q=nullptr, PagerankOptions<T> o={}) {

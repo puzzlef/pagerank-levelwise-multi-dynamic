@@ -84,7 +84,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     // Find sequential Componentwise pagerank.
     auto cs = components(y, yt);
     auto b  = blockgraph(y, cs);
-    sortComponents(cs, b);
+    sortComponentsTopological(cs, b);
     PagerankData<G> D {move(cs), move(b)};
     auto b4 = pagerankComponentwiseSeq(y, yt, init, o, D);
     printRow(y, b0, b4, "I:pagerankComponentwiseSeq (static)");
@@ -148,7 +148,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     // Find sequential Componentwise pagerank.
     auto ds = components(x, xt);
     auto c  = blockgraph(x, ds);
-    sortComponents(ds, c);
+    sortComponentsTopological(ds, c);
     PagerankData<G> E {move(ds), move(c)};
     auto e4 = pagerankComponentwiseSeq(x, xt, init, o, E);
     printRow(y, e0, e4, "D:pagerankComponentwiseSeq (static)");

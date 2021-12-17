@@ -3,7 +3,6 @@
 #include "_main.hxx"
 #include "vertices.hxx"
 #include "dfs.hxx"
-#include "sort.hxx"
 
 using std::vector;
 
