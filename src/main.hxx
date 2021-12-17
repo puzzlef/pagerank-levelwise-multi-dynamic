@@ -11,7 +11,7 @@
 #include "deadEnds.hxx"
 #include "selfLoop.hxx"
 #include "components.hxx"
-#include "topologicalSort.hxx"
+#include "sort.hxx"
 #include "identicals.hxx"
 #include "dynamic.hxx"
 #include "pagerank.hxx"

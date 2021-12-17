@@ -220,6 +220,19 @@ auto joinAt(const vector2d<T>& xs, const J& is) {
 }
 
 
+template <class T, class J>
+void joinAt2d(vector2d<T>& a, const vector2d<T>& xs, const J& ig) {
+  for (const auto& is : ig)
+    a.push_back(joinAt(xs, is));
+}
+
+template <class T, class J>
+auto joinAt2d(const vector2d<T>& xs, const J& ig) {
+  vector2d<T> a; joinAt2d(a, xs, ig);
+  return a;
+}
+
+
 
 
 // COPY-AT

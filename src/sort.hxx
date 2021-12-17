@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include "_main.hxx"
 #include "vertices.hxx"
@@ -7,6 +8,7 @@
 #include "components.hxx"
 
 using std::vector;
+using std::unordered_map;
 using std::reverse;
 
 
@@ -35,12 +37,12 @@ auto topologicalSort(const G& x) {
 // Arrange vertices in dependency and level order.
 // Top level vertices always come first.
 
-template <class H>
-void levelwiseSortAdd(vector<int>& a, vector<bool>& vis, const H& xt) {
-  auto fn = [&](int u) { return vis[u]; };
+template <class H, class F>
+void levelwiseSortDo(vector<bool>& vis, const H& xt, F fn) {
+  auto fvis = [&](int u) { return vis[u]; };
   for (int u : xt.vertices()) {
-    if (vis[u] || !allOf(xt.edges(u), fn)) continue;
-    a.push_back(u); vis[u] = true;
+    if (vis[u] || !allOf(xt.edges(u), fvis)) continue;
+    vis[u] = true; fn(u);
   }
 }
 
@@ -48,9 +50,10 @@ void levelwiseSortAdd(vector<int>& a, vector<bool>& vis, const H& xt) {
 template <class H>
 auto levelwiseSort(const H& xt) {
   vector<int> a;
+  auto fn  = [&](int u) { a.push_back(u); };
   auto vis = createContainer(xt, bool());
   while (a.size() < xt.order())
-    levelwiseSortAdd(a, vis, xt);
+    levelwiseSortDo(vis, xt, fn);
   return a;
 }
 
@@ -65,11 +68,23 @@ auto levelwiseSort(const H& xt) {
 template <class H>
 auto levelwiseGroups(const H& xt) {
   vector2d<int> a;
+  auto fn  = [&](int u) { a.back().push_back(u); };
   auto vis = createContainer(xt, bool());
   while (a.size() < xt.order()) {
     a.push_back({});
-    levelwiseSortAdd(a.back(), vis, xt);
+    levelwiseSortDo(vis, xt, fn);
   }
+  return a;
+}
+
+
+template <class H>
+auto levelwiseGroupIndices(const H& xt) {
+  unordered_map<int, int> a; int i = 0;
+  auto fn = [&](int u) { a[u] = i; };
+  auto vis = createContainer(xt, bool());
+  for (; a.size() < xt.order(); i++)
+    levelwiseSortDo(vis, xt, fn);
   return a;
 }
 
@@ -130,11 +145,11 @@ auto levelwiseComponents(const G& x, const H& xt) {
 
 
 
-// LEVELWISE-GROUPS
-// ----------------
+// LEVELWISE-GROUPED-COMPONENTS
+// ----------------------------
 
 template <class H>
-auto levelwiseGroupsFrom(const vector2d<int>& cs, const H& bt) {
+auto levelwiseGroupedComponentsFrom(const vector2d<int>& cs, const H& bt) {
   vector2d<int> a;
   auto bgs = levelwiseGroups(bt);
   for (const auto& g : bgs)
@@ -143,9 +158,9 @@ auto levelwiseGroupsFrom(const vector2d<int>& cs, const H& bt) {
 }
 
 template <class G, class H>
-auto levelwiseGroups(const G& x, const H& xt) {
+auto levelwiseGroupedComponents(const G& x, const H& xt) {
   auto cs = components(x, xt);
   auto b  = blockgraph(x, cs);
   auto bt = transpose(b);
-  return levelwiseGroupsFrom(cs, bt);
+  return levelwiseGroupedComponentsFrom(cs, bt);
 }
