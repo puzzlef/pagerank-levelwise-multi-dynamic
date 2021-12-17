@@ -6,6 +6,7 @@
 #include "edges.hxx"
 #include "csr.hxx"
 #include "pagerank.hxx"
+#include "pagerankSeq.hxx"
 
 using std::vector;
 using std::swap;

@@ -8,6 +8,7 @@
 #include "edges.hxx"
 #include "csr.hxx"
 #include "pagerank.hxx"
+#include "pagerankSeq.hxx"
 
 using std::array;
 using std::vector;
@@ -16,6 +17,32 @@ using std::partition;
 using std::swap;
 using std::min;
 using std::max;
+
+
+
+
+// PAGERANK-COMPONENTS
+// -------------------
+
+template <class G, class H, class T>
+auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
+  auto cs = pagerankComponents(x, xt, o);
+  auto a  = joinUntilSize(cs, o.minCompute);
+  for (auto& ks : a)
+    pagerankPartition(xt, ks);
+  return a;
+}
+
+
+template <class G, class H, class T>
+auto pagerankCudaDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
+  auto [cs, n] = pagerankDynamicComponents(x, xt, y, yt, o);
+  auto a  = joinUntilSize(sliceIter(cs, 0, n), o.minCompute);
+  for (auto& ks : a)
+    pagerankPartition(xt, ks);
+  a.push_back(join(sliceIter(cs, n)));
+  return make_pair(a, a.size()-1);
+}
 
 
 

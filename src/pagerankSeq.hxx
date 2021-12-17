@@ -13,6 +13,73 @@ using std::swap;
 
 
 
+// PAGERANK-VERTICES
+// -----------------
+
+template <class G, class H, class T>
+auto pagerankVertices(const G& x, const H& xt, const PagerankOptions<T>& o) {
+  if (!o.splitComponents) return vertices(xt);
+  if (!o.sortComponents)  return join(components(x, xt));
+  return join(topologicalComponents(x, xt));
+}
+
+
+template <class G, class H, class T>
+auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
+  if (!o.splitComponents) return dynamicVertices(x, xt, y, yt);
+  auto cs = components(y, yt);
+  auto b  = blockgraph(y, cs);
+  if (o.sortComponents) topologicalComponentsTo(cs, b);
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
+  auto ks = joinAt(cs, sliceIter(is, 0, n)); int nv = ks.size();
+  joinAt(ks, cs, sliceIter(is, n));
+  return make_pair(ks, nv);
+}
+
+
+
+
+// PAGERANK-COMPONENTS
+// -------------------
+
+template <class G, class H, class T>
+auto pagerankComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
+  if (!o.splitComponents) return vector2d<int> {vertices(xt)};
+  if (!o.sortComponents)  return components(x, xt);
+  return topologicalComponents(x, xt);
+}
+
+
+template <class G, class H>
+auto pagerankDynamicComponentsDefault(const G& x, const H& xt, const G& y, const H& yt) {
+  vector2d<int> a;
+  auto [ks, n] = dynamicVertices(x, xt, y, yt);
+  a.push_back(vector<int>(ks.begin(), ks.begin()+n));
+  a.push_back(vector<int>(ks.begin()+n, ks.end()));
+  return make_pair(a, 1);
+}
+
+template <class G, class H, class T>
+auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
+  auto cs = components(y, yt);
+  auto b  = blockgraph(y, cs);
+  if (o.sortComponents) topologicalComponentsTo(cs, b);
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
+  vector2d<int> a;
+  for (int i : is)
+    a.push_back(move(cs[i]));
+  return make_pair(a, n);
+}
+
+template <class G, class H, class T>
+auto pagerankDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
+  if (o.splitComponents) return pagerankDynamicComponentsSplit(x, xt, y, yt, o);
+  return pagerankDynamicComponentsDefault(x, xt, y, yt);
+}
+
+
+
+
 // PAGERANK-FACTOR
 // ---------------
 // For contribution factors of vertices (unchanging).

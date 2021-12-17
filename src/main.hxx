@@ -25,3 +25,6 @@
 #include "pagerankComponentwiseSeq.hxx"
 #include "pagerankComponentwiseOmp.hxx"
 #include "pagerankComponentwiseCuda.hxx"
+#include "pagerankLevelwiseSeq.hxx"
+#include "pagerankLevelwiseOmp.hxx"
+#include "pagerankLevelwiseCuda.hxx"
