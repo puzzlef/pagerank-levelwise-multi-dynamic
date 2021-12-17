@@ -84,17 +84,12 @@ void sortComponents(vector2d<int>& cs, const G& b) {
   reorderDirty(cs, bks);
 }
 
-template <class G>
-auto sortedComponents(const G& x, const vector2d<int>& cs) {
-  auto b = blockgraph(x, cs);
-  sortComponents(cs, b);
-  return cs;
-}
-
 template <class G, class H>
 auto sortedComponents(const G& x, const H& xt) {
   auto cs = components(x, xt);
-  return sortedComponents(x, cs);
+  auto b  = blockgraph(x, cs);
+  sortComponents(cs, b);
+  return cs;
 }
 
 

@@ -18,8 +18,8 @@ using std::swap;
 
 template <class T>
 int pagerankMonolithicSeqLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, int N, T p, T E, int L, int EF) {
-  T  c0 = (1-p)/N;
   int l = 0;
+  T  c0 = (1-p)/N;  // non-teleport dead end handling!
   while (l<L) {
     pagerankCalculate(a, c, vfrom, efrom, i, n, c0);  // assume contribtions (c) is precalculated
     T el = pagerankError(a, r, i, n, EF); ++l;        // one iteration complete

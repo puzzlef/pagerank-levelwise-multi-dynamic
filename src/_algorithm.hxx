@@ -257,6 +257,17 @@ void transform(J& x, F fn) {
 
 
 
+// SORT
+// ----
+
+template <class J>
+void sort(J& x) {
+  sort(x.begin(), x.end());
+}
+
+
+
+
 // SET-DIFFERENCE
 // --------------
 
@@ -281,26 +292,31 @@ auto setDifference(const J& x, const K& y) {
 
 
 
-// TO-*
-// ----
+// WRITE
+// -----
 
 template <class T, class I>
-void toVector(vector<T>& a, I ib, I ie) {
+void write(vector<T>& a, I ib, I ie) {
   a.clear();
-  for (I it=ib; it!=ie; ++it)
-    a.push_back(*it);;
+  a.insert(a.begin(), ib, ie);
 }
+
+template <class T, class J>
+void write(vector<T>& a, const J& vs) {
+  write(a, vs.begin(), vs.end());
+}
+
+
+
+
+// TO-*
+// ----
 
 template <class I>
 auto toVector(I ib, I ie) {
   using T = typename I::value_type;
-  vector<T> a; toVector(a, ib, ie);
+  vector<T> a; write(a, ib, ie);
   return a;
-}
-
-template <class T, class J>
-void toVector(vector<T>& a, const J& x) {
-  toVector(a, x.begin(), x.end());
 }
 
 template <class J>
@@ -317,8 +333,7 @@ void toVector(const J& x) {
 template <class T, class I>
 size_t hashValue(vector<T>& vs, I ib, I ie) {
   size_t a = 0;
-  toVector(vs, ib, ie);
-  sort(vs.begin(), vs.end());
+  write(vs, ib, ie); sort(vs);
   for (const T& v : vs)
     a ^= hash<T>{}(v) + 0x9e3779b9 + (a<<6) + (a>>2); // from boost::hash_combine
   return a;

@@ -105,7 +105,7 @@ void dfsDepthLoop(vector<pair<int,int>>& a, vector<bool>& vis, const G& x, int u
 }
 
 template <class G>
-auto dfs(const G& x, int u, int d) {
+auto dfsDepth(const G& x, int u, int d) {
   vector<pair<int,int>> a;
   auto vis = createContainer(x, bool());
   dfsDepthLoop(a, vis, x, u, d);

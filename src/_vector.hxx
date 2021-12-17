@@ -129,8 +129,8 @@ void append(vector<T>& a, const J& vs) {
 // JOIN
 // ----
 
-template <class T, class F>
-void joinIf(vector2d<T>& a, const vector2d<T>& xs, F fn) {
+template <class J, class F, class T>
+void joinIf(vector2d<T>& a, const J& xs, F fn) {
   for (const auto& x : xs) {
     auto& b = a.back();
     if (a.empty() || !fn(b, x)) a.push_back(x);
@@ -138,33 +138,37 @@ void joinIf(vector2d<T>& a, const vector2d<T>& xs, F fn) {
   }
 }
 
-template <class T, class F>
-auto joinIf(const vector2d<T>& xs, F fn) {
+template <class J, class F>
+auto joinIf(const J& xs, F fn) {
+  using T = typename J::value_type::value_type;
   vector2d<T> a; joinIf(a, xs, fn);
   return a;
 }
 
 
-template <class T>
-void joinUntilSize(vector2d<T>& a, const vector2d<T>& xs, int N) {
-  joinIf(a, xs, [&](const auto& b, const auto& x) { return b.size()<N; });
+template <class J, class T>
+void joinUntilSize(vector2d<T>& a, const J& xs, int S) {
+  auto fn = [&](const auto& b, const auto& x) { return b.size()<S; };
+  joinIf(a, xs, fn);
 }
 
-template <class T>
-auto joinUntilSize(const vector2d<T>& xs, int N) {
-  vector2d<T> a; joinUntilSize(a, xs, N);
+template <class J>
+auto joinUntilSize(const J& xs, int S) {
+  using T = typename J::value_type::value_type;
+  vector2d<T> a; joinUntilSize(a, xs, S);
   return a;
 }
 
 
-template <class T>
-void join(vector<T>& a, const vector2d<T>& xs) {
+template <class J, class T>
+void join(vector<T>& a, const J& xs) {
   for (const auto& x : xs)
     a.insert(a.end(), x.begin(), x.end());
 }
 
-template <class T>
-auto join(const vector2d<T>& xs) {
+template <class J>
+auto join(const J& xs) {
+  using T = typename J::value_type::value_type;
   vector<T> a; join(a, xs);
   return a;
 }
