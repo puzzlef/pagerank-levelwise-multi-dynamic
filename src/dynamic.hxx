@@ -170,14 +170,14 @@ auto changedComponentIndices(const G& x, const H& xt, const G& y, const H& yt, c
 
 template <class G, class B, class F>
 void affectedComponentIndicesForEach(const G& x, const G& y, const vector2d<int>& cs, const B& b, F fn) {
-  vector<bool> vis(cs.size());
+  auto vis = createContainer(b, bool());
   changedComponentIndicesForEach(x, y, cs, [&](int u) { dfsDoLoop(vis, b, u, fn); });
 }
 
 template <class G, class H, class B, class F>
 void affectedComponentIndicesForEach(const G& x, const H& xt, const G& y, const H& yt, const vector2d<int>& cs, const B& b, F fn) {
-  vector<bool> vis(cs.size());
-  changedComponentIndicesForEach(x, xt, y, yt, cs, [&](int u) { dfsDoLoop(vis, y, u, fn); });
+  auto vis = createContainer(b, bool());
+  changedComponentIndicesForEach(x, xt, y, yt, cs, [&](int u) { dfsDoLoop(vis, b, u, fn); });
 }
 
 template <class G, class B>
