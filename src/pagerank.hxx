@@ -105,9 +105,39 @@ struct PagerankResult {
 
 // PAGERANK-DATA
 // -------------
+// Using Pagerank Data for performance!
 
 template <class G>
 struct PagerankData {
-  vector2d<int> components;
   G blockgraph;
+  G blockgraphTranspose;
+  vector2d<int> components;
+  vector2d<int> topologicalComponents;
 };
+
+template <class G>
+auto blockgraphD(const G& x, const vector2d<int>& cs, const PagerankData<G> *D) {
+  return D? D->blockgraph : blockgraph(x, cs):
+}
+
+template <class G>
+auto blockgraphTransposeD(const G& b, const PagerankData<G> *D) {
+  return D? D->blockgraphTranspose : transpose(b);
+}
+
+template <class G, class H>
+auto componentsD(const G& x, const H& xt, const PagerankData<G> *D) {
+  return D? D->components : components(x, xt);
+}
+
+template <class G>
+void topologicalComponentsToD(vector2d<int>& cs, const G& b, const PagerankData<G> *D) {
+  if (D) return D->topologicalComponents;
+  topologicalComponentsTo(cs, b);
+  return cs;
+}
+
+template <class G, class H>
+auto topologicalComponentsD(const G& x, const H& xt, const PagerankData<G> *D) {
+  return D? D->topologicalComponents : topologicalComponents(x, xt);
+}

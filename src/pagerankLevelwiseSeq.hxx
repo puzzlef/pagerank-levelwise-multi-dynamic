@@ -32,26 +32,20 @@ using std::move;
 // @param o  options {damping=0.85, tolerance=1e-6, maxIterations=500}
 // @returns {ranks, iterations, time}
 template <class G, class H, class T=float>
-PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> *q, const PagerankOptions<T>& o, const PagerankData<G>& D) {
-  const auto& cs = D.components;
-  const auto& b  = D.blockgraph;
+PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}, const PagerankData<G> *D=nullptr) {
   int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
-  auto bt = transpose(b);
+  const auto& cs = componentsD(x, xt, D);
+  const auto& b  = blockgraphD(x, cs, D);
+  const auto& bt = blockgraphTransposeD(b, D);
   auto gs = levelwiseGroupedComponentsFrom(cs, bt);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
   auto ks = join<int>(gs);
   return pagerankSeq(xt, ks, 0, ns, pagerankComponentwiseSeqLoop<T, decltype(ns)>, q, o);
 }
-template <class G, class H, class T=float>
-PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
-  auto cs = components(x, xt);
-  auto b  = blockgraph(x, cs);
-  return pagerankLevelwiseSeq(x, xt, q, o, PagerankData<G>(cs, b));
-}
 template <class G, class T=float>
-PagerankResult<T> pagerankLevelwiseSeq(const G& x, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
+PagerankResult<T> pagerankLevelwiseSeq(const G& x, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}, const PagerankData<G> *D=nullptr) {
   auto xt = transposeWithDegree(x);
-  return pagerankLevelwiseSeq(x, xt, q, o);
+  return pagerankLevelwiseSeq(x, xt, q, o, D);
 }
 
 
@@ -61,11 +55,11 @@ PagerankResult<T> pagerankLevelwiseSeq(const G& x, const vector<T> *q=nullptr, c
 // ------------------
 
 template <class G, class H, class T=float>
-PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q, const PagerankOptions<T>& o, const PagerankData<G>& D) {
-  const auto& cs = D.components;
-  const auto& b  = D.blockgraph;
-  int  N  = yt.order();                                 if (N==0) return PagerankResult<T>::initial(yt, q);
-  auto bt = transpose(b);
+PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}, const PagerankData<G> *D=nullptr) {
+  int  N  = yt.order();  if (N==0) return PagerankResult<T>::initial(yt, q);
+  const auto& cs = componentsD(x, xt, D);
+  const auto& b  = blockgraphD(x, cs, D);
+  const auto& bt = blockgraphTransposeD(b, D);
   auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
@@ -76,15 +70,9 @@ PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& 
   auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
   return pagerankSeq(yt, ks, 0, ns, pagerankComponentwiseSeqLoop<T, decltype(ns)>, q, o);
 }
-template <class G, class H, class T=float>
-PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& y, const H& yt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
-  auto cs = components(y, yt);
-  auto b  = blockgraph(y, cs);
-  return pagerankLevelwiseSeqDynamic(x, xt, y, yt, q, o, PagerankData<G>(cs, b));
-}
 template <class G, class T=float>
-PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const G& y, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}) {
+PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const G& y, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}, const PagerankData<G> *D=nullptr) {
   auto xt = transposeWithDegree(x);
   auto yt = transposeWithDegree(y);
-  return pagerankLevelwiseSeqDynamic(x, xt, y, yt, q, o);
+  return pagerankLevelwiseSeqDynamic(x, xt, y, yt, q, o, D);
 }

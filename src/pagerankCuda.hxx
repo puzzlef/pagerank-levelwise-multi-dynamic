@@ -42,8 +42,8 @@ void pagerankPartition(const H& xt, vector<int>& ks) {
 // -------------------
 
 template <class G, class H, class T>
-auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
-  auto cs = pagerankComponents(x, xt, o);
+auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
+  auto cs = pagerankComponents(x, xt, o, D);
   auto a  = joinUntilSize<int>(cs, o.minCompute);
   for (auto& ks : a)
     pagerankPartition(xt, ks);
@@ -52,8 +52,8 @@ auto pagerankCudaComponents(const G& x, const H& xt, const PagerankOptions<T>& o
 
 
 template <class G, class H, class T>
-auto pagerankCudaDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
-  auto [cs, n] = pagerankDynamicComponents(x, xt, y, yt, o);
+auto pagerankCudaDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
+  auto [cs, n] = pagerankDynamicComponents(x, xt, y, yt, o, D);
   auto a = joinUntilSize<int>(sliceIter(cs, 0, n), o.minCompute);
   for (auto& ks : a)
     pagerankPartition(xt, ks);

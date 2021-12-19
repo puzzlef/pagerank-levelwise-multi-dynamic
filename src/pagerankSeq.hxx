@@ -17,19 +17,19 @@ using std::swap;
 // -----------------
 
 template <class G, class H, class T>
-auto pagerankVertices(const G& x, const H& xt, const PagerankOptions<T>& o) {
+auto pagerankVertices(const G& x, const H& xt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   if (!o.splitComponents) return vertices(xt);
-  if (!o.sortComponents)  return join<int>(components(x, xt));
-  return join<int>(topologicalComponents(x, xt));
+  if (!o.sortComponents)  return join<int>(componentsD(x, xt, D));
+  return join<int>(topologicalComponentsD(x, xt, D));
 }
 
 
 template <class G, class H, class T>
-auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
+auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   if (!o.splitComponents) return dynamicVertices(x, xt, y, yt);
-  auto cs = components(y, yt);
-  auto b  = blockgraph(y, cs);
-  if (o.sortComponents) topologicalComponentsTo(cs, b);
+  const auto& cs = componentsD(y, yt, D);
+  const auto& b  = blockgraphD(y, cs, D);
+  if (o.sortComponents) cs = topologicalComponentsToD(cs, b, D);
   auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
   auto ks = joinAt<int>(cs, sliceIter(is, 0, n)); size_t nv = ks.size();
   joinAt(ks, cs, sliceIter(is, n));
@@ -43,10 +43,10 @@ auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, c
 // -------------------
 
 template <class G, class H, class T>
-auto pagerankComponents(const G& x, const H& xt, const PagerankOptions<T>& o) {
+auto pagerankComponents(const G& x, const H& xt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   if (!o.splitComponents) return vector2d<int> {vertices(xt)};
-  if (!o.sortComponents)  return components(x, xt);
-  return topologicalComponents(x, xt);
+  if (!o.sortComponents)  return componentsD(x, xt, D);
+  return topologicalComponentsD(x, xt, D);
 }
 
 
@@ -60,10 +60,10 @@ auto pagerankDynamicComponentsDefault(const G& x, const H& xt, const G& y, const
 }
 
 template <class G, class H, class T>
-auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
-  auto cs = components(y, yt);
-  auto b  = blockgraph(y, cs);
-  if (o.sortComponents) topologicalComponentsTo(cs, b);
+auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
+  const auto& cs = componentsD(y, yt, D);
+  const auto& b  = blockgraphD(y, cs, D);
+  if (o.sortComponents) cs = topologicalComponentsToD(cs, b, D);
   auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
   vector2d<int> a;
   for (int i : is)
@@ -72,8 +72,8 @@ auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H
 }
 
 template <class G, class H, class T>
-auto pagerankDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o) {
-  if (o.splitComponents) return pagerankDynamicComponentsSplit(x, xt, y, yt, o);
+auto pagerankDynamicComponents(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
+  if (o.splitComponents) return pagerankDynamicComponentsSplit(x, xt, y, yt, o, D);
   return pagerankDynamicComponentsDefault(x, xt, y, yt);
 }
 
