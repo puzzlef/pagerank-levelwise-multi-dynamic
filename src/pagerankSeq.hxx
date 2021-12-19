@@ -29,10 +29,10 @@ auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, c
   if (!o.splitComponents) return dynamicVertices(x, xt, y, yt);
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
-  if (o.sortComponents) cs = topologicalComponentsToD(cs, b, D);
-  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
-  auto ks = joinAt<int>(cs, sliceIter(is, 0, n)); size_t nv = ks.size();
-  joinAt(ks, cs, sliceIter(is, n));
+  const auto& ds = o.sortComponents? topologicalComponentsFromD(cs, b, D) : cs;
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, ds, b);
+  auto ks = joinAt<int>(ds, sliceIter(is, 0, n)); size_t nv = ks.size();
+  joinAt(ks, ds, sliceIter(is, n));
   return make_pair(ks, nv);
 }
 
@@ -63,11 +63,11 @@ template <class G, class H, class T>
 auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
-  if (o.sortComponents) cs = topologicalComponentsToD(cs, b, D);
-  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
+  const auto& ds = o.sortComponents? topologicalComponentsFromD(cs, b, D) : cs;
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, ds, b);
   vector2d<int> a;
   for (int i : is)
-    a.push_back(move(cs[i]));
+    a.push_back(move(ds[i]));
   return make_pair(a, n);
 }
 

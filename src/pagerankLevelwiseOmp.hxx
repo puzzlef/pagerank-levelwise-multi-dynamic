@@ -61,7 +61,7 @@ PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const H& xt, const G& 
   auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
   auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto fn = [&](const auto& ig, int i) { return ig.empty() || ig.back()==i; };
+  auto fn = [&](const auto& b, int i) { return b.empty() || gi[b.back()]==gi[i]; };
   auto ig = groupIf<int>(sliceIter(is, 0, n), fn);
   auto gs = joinAt2d<int>(ds, ig);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });

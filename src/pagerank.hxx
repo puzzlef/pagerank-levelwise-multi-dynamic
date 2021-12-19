@@ -117,7 +117,7 @@ struct PagerankData {
 
 template <class G>
 auto blockgraphD(const G& x, const vector2d<int>& cs, const PagerankData<G> *D) {
-  return D? D->blockgraph : blockgraph(x, cs):
+  return D? D->blockgraph : blockgraph(x, cs);
 }
 
 template <class G>
@@ -131,12 +131,9 @@ auto componentsD(const G& x, const H& xt, const PagerankData<G> *D) {
 }
 
 template <class G>
-void topologicalComponentsToD(vector2d<int>& cs, const G& b, const PagerankData<G> *D) {
-  if (D) return D->topologicalComponents;
-  topologicalComponentsTo(cs, b);
-  return cs;
+auto topologicalComponentsFromD(const vector2d<int>& cs, const G& b, const PagerankData<G> *D) {
+  return D? D->topologicalComponents : topologicalComponentsFrom(cs, b);
 }
-
 template <class G, class H>
 auto topologicalComponentsD(const G& x, const H& xt, const PagerankData<G> *D) {
   return D? D->topologicalComponents : topologicalComponents(x, xt);
