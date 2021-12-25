@@ -2,42 +2,48 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <algorithm>
 #include "_main.hxx"
 #include "vertices.hxx"
 
-using std::pair;
 using std::map;
 using std::vector;
-using std::make_pair;
 using std::move;
+using std::sort;
 
 
 
 
-template <class G, class H>
-auto inIdenticals(const G& x, const H& xt) {
-  map<size_t, pair<vector<int>, int>> m;
-  auto vis = createContainer(x, bool());
-  vector<int> es;
+template <class G, class J>
+auto edgeIdenticalsFromSize(const G& x, const J& ks, int n) {
+  using vec = vector<int>;
+  map<vec, vec> m; vec es;
+  // Find groups of identicals.
+  for (int u : ks) {
+    write(es, x.edges(u)); sort(es);
+    m[es].push_back(u);
+  }
+  // Copy identicals from given size in sorted order.
   vector2d<int> a;
-  // For all vertices.
-  for (int u : x.vertices()) {
-    if (x.degree(u) < 2) continue;
-    m.clear();
-    // Scan matching edges by in-vertices hash.
-    for (int v : x.edges(u)) {
-      if (vis[v]) continue;
-      vis[v] = true;
-      size_t h = hashValue(es, xt.edges(v));
-      if (!m.count(h)) m[h] = make_pair(vector<int>(), v);
-      else m[h].first.push_back(v);
-    }
-    // Save in-identicals.
-    for (auto& [_, p] : m) {
-      if (p.first.empty()) continue;
-      p.first.insert(p.first.begin(), p.second);
-      a.push_back(move(p.first));
-    }
+  for (auto& p : m) {
+    auto& is = p.second;
+    if (is.size()<n) continue;
+    sort(is); a.push_back(move(is));
   }
   return a;
+}
+
+template <class G>
+auto edgeIdenticalsFromSize(const G& x, int n) {
+  return edgeIdenticalsFromSize(x, x.vertices(), n);
+}
+
+template <class G, class J>
+auto edgeIdenticals(const G& x, const J& ks) {
+  return edgeIdenticalsFromSize(x, ks, 2);
+}
+
+template <class G>
+auto edgeIdenticals(const G& x) {
+  return edgeIdenticals(x, x.vertices());
 }

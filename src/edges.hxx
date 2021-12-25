@@ -84,3 +84,23 @@ template <class G>
 auto edgeData(const G& x) {
   return edgeData(x, x.vertices());
 }
+
+
+
+
+// EDGES-VISITED
+// -------------
+
+template <class G>
+bool allEdgesVisited(const G& x, int u, const vector<bool>& vis) {
+  for (int v : x.edges(u))
+    if (!vis[v]) return false;
+  return true;
+}
+
+template <class G>
+bool someEdgesVisited(const G& x, int u, const vector<bool>& vis) {
+  for (int v : x.edges(u))
+    if (vis[v]) return true;
+  return false;
+}

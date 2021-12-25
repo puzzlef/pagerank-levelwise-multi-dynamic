@@ -2,14 +2,17 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <utility>
 #include "_main.hxx"
 #include "vertices.hxx"
+#include "edges.hxx"
 #include "dfs.hxx"
 #include "components.hxx"
 
 using std::vector;
 using std::unordered_map;
 using std::reverse;
+using std::swap;
 
 
 
@@ -38,23 +41,21 @@ auto topologicalSort(const G& x) {
 // Top level vertices always come first.
 
 template <class H, class F>
-void levelwiseSortDo(vector<bool>& vis, const H& xt, F fn) {
+void levelwiseSortDo(vector<bool>& visx, vector<bool>& vis, const H& xt, F fn) {
   for (int u : xt.vertices()) {
-    if (vis[u]) continue;
-    for (int v : xt.edges(u))
-      if (!vis[v]) continue;
-    vis[u] = true; fn(u);
+    if (vis[u] || allEdgesVisited(xt, u, vis)) visx[u] = true;
+    if (vis[u] != visx[u]) fn(u);
   }
+  swap(visx, vis);
 }
-
-
 template <class H>
 auto levelwiseSort(const H& xt) {
   vector<int> a;
-  auto fn  = [&](int u) { a.push_back(u); };
-  auto vis = createContainer(xt, bool());
+  auto fn   = [&](int u) { a.push_back(u); };
+  auto vis  = createContainer(xt, bool());
+  auto visx = createContainer(xt, bool());
   while (a.size() < xt.order())
-    levelwiseSortDo(vis, xt, fn);
+    levelwiseSortDo(visx, vis, xt, fn);
   return a;
 }
 
@@ -68,12 +69,14 @@ auto levelwiseSort(const H& xt) {
 
 template <class H>
 auto levelwiseGroups(const H& xt) {
-  vector2d<int> a;
-  auto fn  = [&](int u) { a.back().push_back(u); };
-  auto vis = createContainer(xt, bool());
-  while (a.size() < xt.order()) {
+  vector2d<int> a; int N = 0;
+  auto fn   = [&](int u) { a.back().push_back(u); };
+  auto vis  = createContainer(xt, bool());
+  auto visx = createContainer(xt, bool());
+  while (N < xt.order()) {
     a.push_back({});
-    levelwiseSortDo(vis, xt, fn);
+    levelwiseSortDo(visx, vis, xt, fn);
+    N += a.back().size();
   }
   return a;
 }
@@ -82,10 +85,11 @@ auto levelwiseGroups(const H& xt) {
 template <class H>
 auto levelwiseGroupIndices(const H& xt) {
   unordered_map<int, int> a; int i = 0;
-  auto fn = [&](int u) { a[u] = i; };
-  auto vis = createContainer(xt, bool());
+  auto fn   = [&](int u) { a[u] = i; };
+  auto vis  = createContainer(xt, bool());
+  auto visx = createContainer(xt, bool());
   for (; a.size() < xt.order(); i++)
-    levelwiseSortDo(vis, xt, fn);
+    levelwiseSortDo(visx, vis, xt, fn);
   return a;
 }
 
