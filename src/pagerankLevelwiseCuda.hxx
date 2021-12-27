@@ -62,15 +62,13 @@ PagerankResult<T> pagerankLevelwiseCudaDynamic(const G& x, const H& xt, const G&
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
   const auto& bt = blockgraphTransposeD(b, D);
-  auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
-  auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto fn = [&](const auto& b, int i) { return b.empty() || gi[b.back()]==gi[i]; };
-  auto ig = groupIf<int>(sliceIter(is, 0, n), fn);
-  auto gs = joinAt2d(ds, ig);
+  auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
+  auto ig = groupBy<int>(sliceIter(is, 0, n), [&](int i) { return gi[i]; });
+  auto gs = joinAt2d(cs, ig);
   forEach(gs, [&](auto& g) { pagerankPartition(yt, g); });
   auto ns = pagerankPairWave(yt, gs);
-  auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(ks, cs, sliceIter(is, n));
   return pagerankCuda(yt, ks, 0, ns, pagerankComponentwiseCudaLoop<T, decltype(ns)>, q, o);
 }
 

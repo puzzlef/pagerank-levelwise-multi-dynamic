@@ -256,6 +256,14 @@ void transform(J& a, F fn) {
 // Arrange your portfolio by ROCE.
 
 template <class J>
+void sort(J& x, int i, int n) {
+  sort(x.begin()+i, x.end()+i+n);
+}
+template <class J>
+void sort(J& x, int i) {
+  sort(x.begin()+i, x.end());
+}
+template <class J>
 void sort(J& x) {
   sort(x.begin(), x.end());
 }
@@ -307,16 +315,15 @@ void write(vector<T>& a, const J& vs) {
 // TO-*
 // ----
 
-template <class I>
+template <class T, class I>
 auto toVector(I ib, I ie) {
-  using T = typename I::value_type;
   vector<T> a; write(a, ib, ie);
   return a;
 }
 
-template <class J>
+template <class T, class J>
 void toVector(const J& x) {
-  return toVector(x.begin(), x.end());
+  return toVector<T>(x.begin(), x.end());
 }
 
 

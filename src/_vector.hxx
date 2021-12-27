@@ -2,13 +2,17 @@
 #include <cmath>
 #include <array>
 #include <vector>
+#include <map>
 #include <algorithm>
+#include <utility>
 #include "_openmp.hxx"
 
 using std::array;
 using std::vector;
+using std::map;
 using std::copy;
 using std::swap;
+using std::move;
 using std::abs;
 using std::max;
 using std::sqrt;
@@ -126,9 +130,10 @@ void append(vector<T>& a, const J& vs) {
 
 
 
-// GROUP
-// -----
+// GROUP-IF
+// --------
 
+// UNUSED!
 template <class T, class J, class F>
 void groupIf(vector2d<T>& a, const J& x, F fn) {
   for (const auto& v : x) {
@@ -137,10 +142,31 @@ void groupIf(vector2d<T>& a, const J& x, F fn) {
     else b.push_back(v);
   }
 }
+template <class T, class J, class F>
+auto groupIf(const J& x, F fn) {
+  vector2d<T> a; groupIf(a, x, fn);
+  return a;
+}
+
+
+
+
+// GROUP-BY
+// --------
 
 template <class T, class J, class F>
-auto groupIf(const J& xs, F fn) {
-  vector2d<T> a; groupIf(a, xs, fn);
+void groupBy(vector2d<T>& a, const J& x, F fn) {
+  using K = decltype(fn(T()));
+  map<K, vector<int>> gs;
+  for (const auto& v : x)
+    gs[fn(v)].push_back(v);
+  for (const auto& [k, v] : gs)
+    a.push_back(move(v));
+}
+
+template <class T, class J, class F>
+auto groupBy(const J& x, F fn) {
+  vector2d<T> a; groupBy(a, x, fn);
   return a;
 }
 

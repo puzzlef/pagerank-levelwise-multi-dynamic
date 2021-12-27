@@ -60,14 +60,12 @@ PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& 
   const auto& cs = componentsD(x, xt, D);
   const auto& b  = blockgraphD(x, cs, D);
   const auto& bt = blockgraphTransposeD(b, D);
-  auto ds = levelwiseComponentsFrom(cs, bt);
   auto gi = levelwiseGroupIndices(bt);
-  auto [is, n] = dynamicComponentIndices(x, y, ds, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
-  auto fn = [&](const auto& b, int i) { return b.empty() || gi[b.back()]==gi[i]; };
-  auto ig = groupIf<int>(sliceIter(is, 0, n), fn);
-  auto gs = joinAt2d<int>(ds, ig);
+  auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
+  auto ig = groupBy<int>(sliceIter(is, 0, n), [&](int i) { return gi[i]; });
+  auto gs = joinAt2d<int>(cs, ig);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
-  auto ks = join<int>(gs); joinAt(ks, ds, sliceIter(is, n));
+  auto ks = join<int>(gs); joinAt(ks, cs, sliceIter(is, n));
   return pagerankSeq(yt, ks, 0, ns, pagerankComponentwiseSeqLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>
