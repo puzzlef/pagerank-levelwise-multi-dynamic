@@ -55,8 +55,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto cs  = components(y, yt);
     auto b   = blockgraph(y, cs);
     auto bt  = transpose(b);
-    auto cst = topologicalComponentsFrom(cs, b);
-    PagerankData<G> D {move(b), move(bt), move(cs), move(cst)};
+    PagerankData<G> D {move(b), move(bt), move(cs)};
 
     // Find nvGraph-based pagerank.
     auto b0 = pagerankNvgraph(y, yt, init, {repeat});
@@ -146,8 +145,7 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     auto ds = components(x, xt);
     auto c  = blockgraph(x, ds);
     auto ct = transpose(c);
-    auto dst = topologicalComponentsFrom(ds, c);
-    PagerankData<G> E {move(c), move(ct), move(ds), move(dst)};
+    PagerankData<G> E {move(c), move(ct), move(ds)};
 
     // Find nvGraph-based pagerank.
     auto e0 = pagerankNvgraph(x, xt, init, {repeat, Li});

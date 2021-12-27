@@ -62,13 +62,12 @@ struct PagerankOptions {
   int  toleranceNorm;
   int  minCompute;
   bool splitComponents;
-  bool sortComponents;
   T    damping;
   T    tolerance;
   int  maxIterations;
 
-  PagerankOptions(int repeat=1, int toleranceNorm=1, int minCompute=1, bool splitComponents=false, bool sortComponents=false, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
-  repeat(repeat), toleranceNorm(toleranceNorm), minCompute(minCompute), splitComponents(splitComponents), sortComponents(sortComponents), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
+  PagerankOptions(int repeat=1, int toleranceNorm=1, int minCompute=1, bool splitComponents=false, T damping=0.85, T tolerance=1e-6, int maxIterations=500) :
+  repeat(repeat), toleranceNorm(toleranceNorm), minCompute(minCompute), splitComponents(splitComponents), damping(damping), tolerance(tolerance), maxIterations(maxIterations) {}
 };
 
 
@@ -112,7 +111,6 @@ struct PagerankData {
   G blockgraph;
   G blockgraphTranspose;
   vector2d<int> components;
-  vector2d<int> topologicalComponents;
 };
 
 template <class G>
@@ -128,13 +126,4 @@ auto blockgraphTransposeD(const G& b, const PagerankData<G> *D) {
 template <class G, class H>
 auto componentsD(const G& x, const H& xt, const PagerankData<G> *D) {
   return D? D->components : components(x, xt);
-}
-
-template <class G>
-auto topologicalComponentsFromD(const vector2d<int>& cs, const G& b, const PagerankData<G> *D) {
-  return D? D->topologicalComponents : topologicalComponentsFrom(cs, b);
-}
-template <class G, class H>
-auto topologicalComponentsD(const G& x, const H& xt, const PagerankData<G> *D) {
-  return D? D->topologicalComponents : topologicalComponents(x, xt);
 }

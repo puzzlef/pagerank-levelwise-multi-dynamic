@@ -19,8 +19,7 @@ using std::swap;
 template <class G, class H, class T>
 auto pagerankVertices(const G& x, const H& xt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   if (!o.splitComponents) return vertices(xt);
-  if (!o.sortComponents)  return join<int>(componentsD(x, xt, D));
-  return join<int>(topologicalComponentsD(x, xt, D));
+  return join<int>(componentsD(x, xt, D));
 }
 
 
@@ -29,10 +28,9 @@ auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, c
   if (!o.splitComponents) return dynamicVertices(x, xt, y, yt);
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
-  const auto& ds = o.sortComponents? topologicalComponentsFromD(cs, b, D) : cs;
-  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, ds, b);
-  auto ks = joinAt<int>(ds, sliceIter(is, 0, n)); size_t nv = ks.size();
-  joinAt(ks, ds, sliceIter(is, n));
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
+  auto ks = joinAt<int>(cs, sliceIter(is, 0, n)); size_t nv = ks.size();
+  joinAt(ks, cs, sliceIter(is, n));
   return make_pair(ks, nv);
 }
 
@@ -45,8 +43,7 @@ auto pagerankDynamicVertices(const G& x, const H& xt, const G& y, const H& yt, c
 template <class G, class H, class T>
 auto pagerankComponents(const G& x, const H& xt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   if (!o.splitComponents) return vector2d<int> {vertices(xt)};
-  if (!o.sortComponents)  return componentsD(x, xt, D);
-  return topologicalComponentsD(x, xt, D);
+  return componentsD(x, xt, D);
 }
 
 
@@ -63,11 +60,10 @@ template <class G, class H, class T>
 auto pagerankDynamicComponentsSplit(const G& x, const H& xt, const G& y, const H& yt, const PagerankOptions<T>& o, const PagerankData<G> *D=nullptr) {
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
-  const auto& ds = o.sortComponents? topologicalComponentsFromD(cs, b, D) : cs;
-  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, ds, b);
+  auto [is, n] = dynamicComponentIndices(x, xt, y, yt, cs, b);
   vector2d<int> a;
   for (int i : is)
-    a.push_back(move(ds[i]));
+    a.push_back(cs[i]);
   return make_pair(a, n);
 }
 
