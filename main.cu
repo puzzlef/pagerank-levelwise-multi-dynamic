@@ -64,12 +64,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, b0, c0, "I:pagerankNvgraph (incremental)");
 
     // Find sequential Monolithic pagerank.
-    auto b1 = pagerankMonolithicSeq(y, yt, init, {repeat, Li}, &D);
-    printRow(y, b0, b1, "I:pagerankMonolithicSeq (static)");
-    auto c1 = pagerankMonolithicSeq(y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, c1, "I:pagerankMonolithicSeq (incremental)");
-    auto d1 = pagerankMonolithicSeqDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, d1, "I:pagerankMonolithicSeq (dynamic)");
+    // auto b1 = pagerankMonolithicSeq(y, yt, init, {repeat, Li}, &D);
+    // printRow(y, b0, b1, "I:pagerankMonolithicSeq (static)");
+    // auto c1 = pagerankMonolithicSeq(y, yt, &s0, {repeat, Li}, &D);
+    // printRow(y, b0, c1, "I:pagerankMonolithicSeq (incremental)");
+    // auto d1 = pagerankMonolithicSeqDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
+    // printRow(y, b0, d1, "I:pagerankMonolithicSeq (dynamic)");
 
     // Find sequential Monolithic pagerank (split).
     auto h1 = pagerankMonolithicSeq(y, yt, init, {repeat, Li, 1, true}, &D);
@@ -80,12 +80,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, b0, j1, "I:pagerankMonolithicSeqSplit (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank.
-    auto b2 = pagerankMonolithicOmp(y, yt, init, {repeat, Li}, &D);
-    printRow(y, b0, b2, "I:pagerankMonolithicOmp (static)");
-    auto c2 = pagerankMonolithicOmp(y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, c2, "I:pagerankMonolithicOmp (incremental)");
-    auto d2 = pagerankMonolithicOmpDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, d2, "I:pagerankMonolithicOmp (dynamic)");
+    // auto b2 = pagerankMonolithicOmp(y, yt, init, {repeat, Li}, &D);
+    // printRow(y, b0, b2, "I:pagerankMonolithicOmp (static)");
+    // auto c2 = pagerankMonolithicOmp(y, yt, &s0, {repeat, Li}, &D);
+    // printRow(y, b0, c2, "I:pagerankMonolithicOmp (incremental)");
+    // auto d2 = pagerankMonolithicOmpDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
+    // printRow(y, b0, d2, "I:pagerankMonolithicOmp (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank (split).
     auto h2 = pagerankMonolithicOmp(y, yt, init, {repeat, Li, 1, true}, &D);
@@ -96,12 +96,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, b0, j2, "I:pagerankMonolithicOmpSplit (dynamic)");
 
     // Find CUDA-based Monolithic pagerank.
-    auto b3 = pagerankMonolithicCuda(y, yt, init, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
-    printRow(y, b0, b3, "I:pagerankMonolithicCuda (static)");
-    auto c3 = pagerankMonolithicCuda(y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
-    printRow(y, b0, c3, "I:pagerankMonolithicCuda (incremental)");
-    auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
-    printRow(y, b0, d3, "I:pagerankMonolithicCuda (dynamic)");
+    // auto b3 = pagerankMonolithicCuda(y, yt, init, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
+    // printRow(y, b0, b3, "I:pagerankMonolithicCuda (static)");
+    // auto c3 = pagerankMonolithicCuda(y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
+    // printRow(y, b0, c3, "I:pagerankMonolithicCuda (incremental)");
+    // auto d3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA}, &D);
+    // printRow(y, b0, d3, "I:pagerankMonolithicCuda (dynamic)");
 
     // Find CUDA-based Monolithic pagerank (split).
     auto h3 = pagerankMonolithicCuda(y, yt, init, {repeat, Li, MIN_COMPUTE_CUDA, true}, &D);
@@ -154,12 +154,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, e0, f0, "D:pagerankNvgraph (incremental)");
 
     // Find sequential Monolithic pagerank.
-    auto e1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e1, "D:pagerankMonolithicSeq (static)");
-    auto f1 = pagerankMonolithicSeq(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f1, "D:pagerankMonolithicSeq (incremental)");
-    auto g1 = pagerankMonolithicSeqDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g1, "D:pagerankMonolithicSeq (dynamic)");
+    // auto e1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li}, &E);
+    // printRow(y, e0, e1, "D:pagerankMonolithicSeq (static)");
+    // auto f1 = pagerankMonolithicSeq(x, xt, &r1, {repeat, Li}, &E);
+    // printRow(y, e0, f1, "D:pagerankMonolithicSeq (incremental)");
+    // auto g1 = pagerankMonolithicSeqDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
+    // printRow(y, e0, g1, "D:pagerankMonolithicSeq (dynamic)");
 
     // Find sequential Monolithic pagerank (split).
     auto k1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li, 1, true}, &E);
@@ -170,12 +170,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, e0, m1, "D:pagerankMonolithicSeqSplit (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank.
-    auto e2 = pagerankMonolithicOmp(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e2, "D:pagerankMonolithicOmp (static)");
-    auto f2 = pagerankMonolithicOmp(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f2, "D:pagerankMonolithicOmp (incremental)");
-    auto g2 = pagerankMonolithicOmpDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g2, "D:pagerankMonolithicOmp (dynamic)");
+    // auto e2 = pagerankMonolithicOmp(x, xt, init, {repeat, Li}, &E);
+    // printRow(y, e0, e2, "D:pagerankMonolithicOmp (static)");
+    // auto f2 = pagerankMonolithicOmp(x, xt, &r1, {repeat, Li}, &E);
+    // printRow(y, e0, f2, "D:pagerankMonolithicOmp (incremental)");
+    // auto g2 = pagerankMonolithicOmpDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
+    // printRow(y, e0, g2, "D:pagerankMonolithicOmp (dynamic)");
 
     // Find OpenMP-based Monolithic pagerank.
     auto k2 = pagerankMonolithicOmp(x, xt, init, {repeat, Li, 1, true}, &E);
@@ -186,12 +186,12 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printRow(y, e0, m2, "D:pagerankMonolithicOmpSplit (dynamic)");
 
     // Find CUDA-based Monolithic pagerank.
-    auto e3 = pagerankMonolithicCuda(x, xt, init, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    printRow(y, e0, e3, "D:pagerankMonolithicCuda (static)");
-    auto f3 = pagerankMonolithicCuda(x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    printRow(y, e0, f3, "D:pagerankMonolithicCuda (incremental)");
-    auto g3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    printRow(y, e0, g3, "D:pagerankMonolithicCuda (dynamic)");
+    // auto e3 = pagerankMonolithicCuda(x, xt, init, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
+    // printRow(y, e0, e3, "D:pagerankMonolithicCuda (static)");
+    // auto f3 = pagerankMonolithicCuda(x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
+    // printRow(y, e0, f3, "D:pagerankMonolithicCuda (incremental)");
+    // auto g3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
+    // printRow(y, e0, g3, "D:pagerankMonolithicCuda (dynamic)");
 
     // Find CUDA-based Monolithic pagerank (split).
     auto k3 = pagerankMonolithicCuda(x, xt, init, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
