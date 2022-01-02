@@ -1,10 +1,9 @@
 #include <cmath>
-#include <string>
 #include <vector>
-#include <sstream>
 #include <cstdio>
 #include <iostream>
 #include <utility>
+#include <random>
 #include "src/main.hxx"
 
 using namespace std;
@@ -18,28 +17,28 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
   print(x); printf(" [%09.3f ms; %03d iters.] [%.4e err.] %s\n", b.time, b.iterations, e, tec);
 }
 
-void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
+template <class G>
+void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
   using T = float;
-  using G = DiGraph<>;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
+  int span = int(1.1 * x.span());
   const int MIN_COMPUTE_CUDA = 10000000;
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
+  random_device dev;
+  default_random_engine rnd(dev());
 
-  DiGraph<> xo;
-  stringstream s(data);
-  while (true) {
-    // Skip some edges (to speed up execution)
-    if (skip>0 && !readSnapTemporal(xo, s, skip)) break;
+  for (int i=0; i<steps; i++) {
     auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
     auto xt = transposeWithDegree(x);
     auto ksOld = vertices(x);
     auto a0 = pagerankNvgraph(x, xt, init, {repeat});
     auto r0 = a0.ranks;
 
-    // Read edges for this batch.
+    // Add random edges for this batch.
     auto yo = copy(xo);
-    if (!readSnapTemporal(yo, s, batch)) break;
+    for (int i=0; i<batch; i++)
+      addRandomEdgeByDegree(yo, rnd, span);
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
@@ -224,20 +223,16 @@ void runPagerankBatch(const string& data, int repeat, int skip, int batch) {
     printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)");
     auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
     printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)");
-
-    // New graph is now old.
-    xo = move(yo);
   }
 }
 
 
-void runPagerank(const string& data, int repeat) {
-  int M = countLines(data), steps = 10;
-  printf("Temporal edges: %d\n", M);
+template <class G>
+void runPagerank(const G& x, int repeat) {
+  int M = x.size(), steps = 10;
   for (int batch=10, i=0; batch<M; batch*=i&1? 2:5, i++) {
-    int skip = max(M/steps - batch, 0);
     printf("\n# Batch size %.0e\n", (double) batch);
-    runPagerankBatch(data, repeat, skip, batch);
+    runPagerankBatch(data, repeat, steps, batch);
   }
 }
 
@@ -245,9 +240,9 @@ void runPagerank(const string& data, int repeat) {
 int main(int argc, char **argv) {
   char *file = argv[1];
   int repeat = argc>2? stoi(argv[2]) : 5;
-  printf("Using graph %s ...\n", file);
-  string d = readFile(file);
-  runPagerank(d, repeat);
-    printf("\n");
+  printf("Loading graph %s ...\n", file);
+  auto x = readMtx(file); println(x);
+  runPagerank(x, repeat);
+  printf("\n");
   return 0;
 }
