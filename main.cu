@@ -11,6 +11,8 @@ using namespace std;
 
 
 
+#define MIN_COMPUTE_CUDA 10000000
+
 template <class G, class T>
 void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b, const char *tec) {
   auto e = l1Norm(b.ranks, a.ranks);
@@ -21,8 +23,7 @@ template <class G>
 void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
   using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
-  int span = int(1.1 * x.span());
-  const int MIN_COMPUTE_CUDA = 10000000;
+  int span = int(1.1 * xo.span());
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
   random_device dev;
@@ -232,7 +233,7 @@ void runPagerank(const G& x, int repeat) {
   int M = x.size(), steps = 10;
   for (int batch=10, i=0; batch<M; batch*=i&1? 2:5, i++) {
     printf("\n# Batch size %.0e\n", (double) batch);
-    runPagerankBatch(data, repeat, steps, batch);
+    runPagerankBatch(x, repeat, steps, batch);
   }
 }
 
