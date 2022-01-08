@@ -2,8 +2,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const RGRAPH = /^Using graph .*\/(.*?)\.txt \.\.\./m;
-const RTEMPE = /^Temporal edges: (\d+)/m;
+const RGRAPH = /^Loading graph .*\/(.*?)\.mtx \.\.\./m;
+const RORDER = /^order: (\d+) size: (\d+) {}$/m;
 const RBATCH = /^# Batch size ([\d\.e+-]+)/;
 const RRESLT = /^order: (\d+) size: (\d+) \{\} \[(.*?) ms; (\d+) iters\.\] \[(.*?) err\.\] (.*)/m;
 
@@ -66,9 +66,10 @@ function readLogLine(ln, data, state) {
     if (!data.has(graph)) data.set(graph, []);
     state = {graph};
   }
-  else if (RTEMPE.test(ln)) {
-    var [, temporal_edges] = RTEMPE.exec(ln);
-    state.temporal_edges = parseFloat(temporal_edges);
+  else if (RORDER.test(ln)) {
+    var [, order, size] = RORDER.exec(ln);
+    state.order = parseFloat(order);
+    state.size  = parseFloat(size);
   }
   else if (RBATCH.test(ln)) {
     var [, batch_size] = RBATCH.exec(ln);
@@ -76,17 +77,14 @@ function readLogLine(ln, data, state) {
   }
   else if (RRESLT.test(ln)) {
     var [, order, size, time, iters, err, technique] = RRESLT.exec(ln);
-    data.get(state.graph).push({
-      graph: state.graph,
-      temporal_edges: state.temporal_edges,
-      batch_size: state.batch_size,
-      order: parseFloat(order),
-      size: parseFloat(size),
-      time: parseFloat(time),
+    data.get(state.graph).push(Object.assign({}, state, {
+      order:      parseFloat(order),
+      size:       parseFloat(size),
+      time:       parseFloat(time),
       iterations: parseFloat(iters),
-      error: parseFloat(err),
+      error:      parseFloat(err),
       technique
-    });
+    }));
   }
   return state;
 }
