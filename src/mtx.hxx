@@ -48,8 +48,8 @@ void readMtx(G& a, istream& s) {
     int u, v;
     ls = stringstream(ln);
     if (!(ls >> u >> v)) break;
-    a.addEdge(u, v);
-    if (sym) a.addEdge(v, u);
+    a.addEdgeUnchecked(u, v);
+    if (sym) a.addEdgeUnchecked(v, u);
   }
 }
 

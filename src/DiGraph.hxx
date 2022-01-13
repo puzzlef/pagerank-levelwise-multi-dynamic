@@ -71,12 +71,16 @@ class DiGraph {
     N++;
   }
 
-  void addEdge(int u, int v, E d=E()) {
-    if (hasEdge(u, v)) return;
+  void addEdgeUnchecked(int u, int v, E d=E()) {
     addVertex(u);
     addVertex(v);
     edata[u].add(v, d);
     M++;
+  }
+
+  void addEdge(int u, int v, E d=E()) {
+    if (hasEdge(u, v)) return;
+    addEdgeUnchecked(u, v, d);
   }
 
   void removeEdge(int u, int v) {
