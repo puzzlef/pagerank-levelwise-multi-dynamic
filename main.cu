@@ -39,7 +39,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     // Add random edges for this batch.
     auto yo = copy(xo);
     for (int i=0; i<batch; i++)
-      addRandomEdgeByDegree(yo, rnd, span);
+      addRandomEdge(yo, rnd, span);
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
