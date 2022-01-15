@@ -54,6 +54,7 @@ void readMtx(G& a, istream& s, FS fs) {
     if (++events<=1000000) continue;
     fs(a.size()/float(sz)); events = 0;
   }
+  a.correct();
 }
 
 template <class FS>

@@ -99,6 +99,11 @@ class BitsetSorted {
 
   // Write operations
   public:
+  void correct() {
+    auto fl = [](const auto& a, const auto& b) { return a.first < b.first; };
+    sort(ids.begin(), ids.end(), fl);
+  }
+
   void clear() {
     ids.clear();
   }
@@ -107,6 +112,10 @@ class BitsetSorted {
     auto it = lookup(id);
     if (it == ids.end()) return;
     (*it).second = v;
+  }
+
+  void addUnchecked(int id, T v=T()) {
+    ids.push_back({id, v});
   }
 
   void add(int id, T v=T()) {
