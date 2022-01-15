@@ -33,7 +33,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
     auto xt = transposeWithDegree(x);
     auto ksOld = vertices(x);
-    auto a0 = pagerankNvgraph(x, xt, init, {repeat});
+    auto a0 = pagerankMonolithicCuda(x, xt, init, {repeat});  // pagerankNvgraph(x, xt, init, {repeat});
     auto r0 = a0.ranks;
 
     // Add random edges for this batch.
@@ -58,10 +58,10 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     PagerankData<G> D {move(b), move(bt), move(cs)};
 
     // Find nvGraph-based pagerank.
-    auto b0 = pagerankNvgraph(y, yt, init, {repeat});
-    printRow(y, b0, b0, "I:pagerankNvgraph (static)");
-    auto c0 = pagerankNvgraph(y, yt, &s0, {repeat});
-    printRow(y, b0, c0, "I:pagerankNvgraph (incremental)");
+    auto b0 = pagerankMonolithicCuda(y, yt, init, {repeat});
+    printRow(y, b0, b0, "I:pagerankNvgraphX (static)");
+    auto c0 = pagerankMonolithicCuda(y, yt, &s0, {repeat});
+    printRow(y, b0, c0, "I:pagerankNvgraphX (incremental)");
 
     // Find sequential Monolithic pagerank.
     // auto b1 = pagerankMonolithicSeq(y, yt, init, {repeat, Li}, &D);
@@ -148,10 +148,10 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     PagerankData<G> E {move(c), move(ct), move(ds)};
 
     // Find nvGraph-based pagerank.
-    auto e0 = pagerankNvgraph(x, xt, init, {repeat, Li});
-    printRow(y, e0, e0, "D:pagerankNvgraph (static)");
-    auto f0 = pagerankNvgraph(x, xt, &r1, {repeat, Li});
-    printRow(y, e0, f0, "D:pagerankNvgraph (incremental)");
+    auto e0 = pagerankMonolithicCuda(x, xt, init, {repeat, Li});
+    printRow(y, e0, e0, "D:pagerankNvgraphX (static)");
+    auto f0 = pagerankMonolithicCuda(x, xt, &r1, {repeat, Li});
+    printRow(y, e0, f0, "D:pagerankNvgraphX (incremental)");
 
     // Find sequential Monolithic pagerank.
     // auto e1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li}, &E);
@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
   char *file = argv[1];
   int repeat = argc>2? stoi(argv[2]) : 5;
   printf("Loading graph %s ...\n", file);
-  auto fs = [&](float p) { printf("Loading graph %s [%05.2f] ...\n", file, p); };
+  auto fs = [&](float p) { printf("Loading graph %s [%04.1f] ...\n", file, 100*p); };
   auto x  = readMtx(file, fs); println(x);
   runPagerank(x, repeat);
   printf("\n");
