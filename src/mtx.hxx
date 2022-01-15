@@ -20,8 +20,8 @@ using std::max;
 // READ-MTX
 // --------
 
-template <class G>
-void readMtx(G& a, istream& s) {
+template <class G, class FS>
+void readMtx(G& a, istream& s, FS fs) {
   string ln, h0, h1, h2, h3, h4;
 
   // read header
@@ -44,30 +44,35 @@ void readMtx(G& a, istream& s) {
     a.addVertex(u);
 
   // read edges (from, to)
+  int events = 0;
   while (getline(s, ln)) {
     int u, v;
     ls = stringstream(ln);
     if (!(ls >> u >> v)) break;
     a.addEdgeUnchecked(u, v);
     if (sym) a.addEdgeUnchecked(v, u);
+    if (++events<=1000000) continue;
+    fs(a.size()/float(sz)); events = 0;
   }
 }
 
-auto readMtx(istream& s) {
-  DiGraph<> a; readMtx(a, s);
+template <class FS>
+auto readMtx(istream& s, FS fs) {
+  DiGraph<> a; readMtx(a, s, fs);
   return a;
 }
 
 
-template <class G>
-void readMtx(G& a, const char *pth) {
+template <class G, class FS>
+void readMtx(G& a, const char *pth, FS fs) {
   string buf = readFile(pth);
   stringstream s(buf);
-  return readMtx(a, s);
+  return readMtx(a, s, fs);
 }
 
-auto readMtx(const char *pth) {
-  DiGraph<> a; readMtx(a, pth);
+template <class FS>
+auto readMtx(const char *pth, FS fs) {
+  DiGraph<> a; readMtx(a, pth, fs);
   return a;
 }
 
