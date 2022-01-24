@@ -91,12 +91,12 @@ void pagerankFactorCu(T *a, const int *vdata, int i, int n, T p) {
 // --------------
 
 template <class T, int S=BLOCK_LIMIT>
-__global__ void pagerankBlockKernel(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+__global__ void pagerankBlockKernel(T *a, const T *c, const size_t *vfrom, const int *efrom, int i, int n, T c0) {
   DEFINE(t, b, B, G);
   __shared__ T cache[S];
   for (int v=i+b; v<i+n; v+=G) {
-    int ebgn = vfrom[v];
-    int ideg = vfrom[v+1]-vfrom[v];
+    size_t ebgn = vfrom[v];
+    size_t ideg = vfrom[v+1]-vfrom[v];
     cache[t] = sumAtKernelLoop(c, efrom+ebgn, ideg, t, B);
     sumKernelReduce(cache, B, t);
     if (t==0) a[v] = c0 + cache[0];
@@ -104,7 +104,7 @@ __global__ void pagerankBlockKernel(T *a, const T *c, const int *vfrom, const in
 }
 
 template <class T>
-void pagerankBlockCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+void pagerankBlockCu(T *a, const T *c, const size_t *vfrom, const int *efrom, int i, int n, T c0) {
   int B = BLOCK_DIM_PRCB<T>();
   int G = min(n, GRID_DIM_PRCB<T>());
   pagerankBlockKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
@@ -117,17 +117,17 @@ void pagerankBlockCu(T *a, const T *c, const int *vfrom, const int *efrom, int i
 // ---------------
 
 template <class T>
-__global__ void pagerankThreadKernel(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+__global__ void pagerankThreadKernel(T *a, const T *c, const size_t *vfrom, const int *efrom, int i, int n, T c0) {
   DEFINE(t, b, B, G);
   for (int v=i+B*b+t; v<i+n; v+=G*B) {
-    int ebgn = vfrom[v];
-    int ideg = vfrom[v+1]-vfrom[v];
+    size_t ebgn = vfrom[v];
+    size_t ideg = vfrom[v+1]-vfrom[v];
     a[v] = c0 + sumAtKernelLoop(c, efrom+ebgn, ideg, 0, 1);
   }
 }
 
 template <class T>
-void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+void pagerankThreadCu(T *a, const T *c, const size_t *vfrom, const int *efrom, int i, int n, T c0) {
   int B = BLOCK_DIM_PRCT<T>();
   int G = min(ceilDiv(n, B), GRID_DIM_PRCT<T>());
   pagerankThreadKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
@@ -140,7 +140,7 @@ void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int 
 // -----------------
 
 template <class T, class J>
-void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, const J& ns, T c0) {
+void pagerankSwitchedCu(T *a, const T *c, const size_t *vfrom, const int *efrom, int i, const J& ns, T c0) {
   for (int n : ns) {
     if (n>0) pagerankBlockCu (a, c, vfrom, efrom, i,  n, c0);
     else     pagerankThreadCu(a, c, vfrom, efrom, i, -n, c0);
@@ -257,7 +257,7 @@ PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL 
   auto vfrom = sourceOffsets(xt, ks);
   auto efrom = destinationIndices(xt, ks);
   auto vdata = vertexData(xt, ks);
-  size_t VFROM1 = vfrom.size() * sizeof(int);
+  size_t VFROM1 = vfrom.size() * sizeof(size_t);
   size_t EFROM1 = efrom.size() * sizeof(int);
   size_t VDATA1 = vdata.size() * sizeof(int);
   size_t N1 = N * sizeof(T);
@@ -267,28 +267,19 @@ PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL 
 
   T *e,  *r0;
   T *eD, *r0D, *fD, *rD, *cD, *aD;
-  int *vfromD, *efromD, *vdataD;
+  size_t *vfromD; int *efromD, *vdataD;
   // TRY( cudaProfilerStart() );
   TRY( cudaSetDeviceFlags(cudaDeviceMapHost) );
   TRY( cudaHostAlloc(&e,  R1, cudaHostAllocDefault) );
   TRY( cudaHostAlloc(&r0, R1, cudaHostAllocDefault) );
-  printf("cudaMalloc(&vfromD,  %d)\n", VFROM1);
   TRY( cudaMalloc(&vfromD, VFROM1) );
-  printf("cudaMalloc(&efromD,  %d)\n", EFROM1);
   TRY( cudaMalloc(&efromD, EFROM1) );
-  printf("cudaMalloc(&vdataD,  %d)\n", VDATA1);
   TRY( cudaMalloc(&vdataD, VDATA1) );
-  printf("cudaMalloc(&aD,  %d)\n", N1);
   TRY( cudaMalloc(&aD, N1) );
-  printf("cudaMalloc(&rD,  %d)\n", N1);
   TRY( cudaMalloc(&rD, N1) );
-  printf("cudaMalloc(&cD,  %d)\n", N1);
   TRY( cudaMalloc(&cD, N1) );
-  printf("cudaMalloc(&fD,  %d)\n", N1);
   TRY( cudaMalloc(&fD, N1) );
-  printf("cudaMalloc(&eD,  %d)\n", R1);
   TRY( cudaMalloc(&eD,  R1) );
-  printf("cudaMalloc(&r0D, %d)\n", R1);
   TRY( cudaMalloc(&r0D, R1) );
   TRY( cudaMemcpy(vfromD, vfrom.data(), VFROM1, cudaMemcpyHostToDevice) );
   TRY( cudaMemcpy(efromD, efrom.data(), EFROM1, cudaMemcpyHostToDevice) );

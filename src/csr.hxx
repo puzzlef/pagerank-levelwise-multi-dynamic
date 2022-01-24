@@ -12,10 +12,10 @@ using std::transform;
 // SOURCE-OFFSETS
 // --------------
 
-template <class G, class J>
-auto sourceOffsets(const G& x, const J& ks) {
-  int i = 0;
-  vector<int> a;
+template <class G, class J, class T>
+auto sourceOffsetsAs(const G& x, const J& ks, T _) {
+  T i = 0;
+  vector<T> a;
   a.reserve(x.order()+1);
   for (auto u : ks) {
     a.push_back(i);
@@ -24,10 +24,18 @@ auto sourceOffsets(const G& x, const J& ks) {
   a.push_back(i);
   return a;
 }
+template <class G, class T>
+auto sourceOffsetsAs(const G& x, T _) {
+  return sourceOffsetsAs(x, x.vertices(), T());
+}
 
+template <class G, class J>
+auto sourceOffsets(const G& x, const J& ks) {
+  return sourceOffsetsAs(x, ks, size_t());
+}
 template <class G>
 auto sourceOffsets(const G& x) {
-  return sourceOffsets(x, x.vertices());
+  return sourceOffsetsAs(x, size_t());
 }
 
 

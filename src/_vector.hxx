@@ -63,9 +63,9 @@ size_t size3d(const vector3d<T>& x) {
 // -------
 // Ref: https://stackoverflow.com/a/22183350/1413259
 
-template <class T>
-void reorderDirty(vector<T>& x, vector<int>& is) {
-  for(int i=0, N=x.size(); i<N; i++) {
+template <class T, class K>
+void reorderDirty(vector<T>& x, vector<K>& is) {
+  for(size_t i=0, N=x.size(); i<N; i++) {
     while(is[i] != is[is[i]]) {
       swap(x[is[i]], x[is[is[i]]]);
       swap(  is[i],    is[is[i]]);
@@ -73,8 +73,8 @@ void reorderDirty(vector<T>& x, vector<int>& is) {
   }
 }
 
-template <class T>
-void reorder(vector<T>& x, vector<int> is) {
+template <class T, class K>
+void reorder(vector<T>& x, vector<K> is) {
   reorderDirty(x, is);
 }
 
@@ -85,12 +85,12 @@ void reorder(vector<T>& x, vector<int> is) {
 // -----
 
 template <class T>
-void eraseIndex(vector<T>& a, int i) {
+void eraseIndex(vector<T>& a, size_t i) {
   a.erase(a.begin()+i);
 }
 
 template <class T>
-void eraseIndex(vector<T>& a, int i, int I) {
+void eraseIndex(vector<T>& a, size_t i, size_t I) {
   a.erase(a.begin()+i, a.begin()+I);
 }
 
@@ -101,12 +101,12 @@ void eraseIndex(vector<T>& a, int i, int I) {
 // ------
 
 template <class T>
-void insertIndex(vector<T>& a, int i, const T& v) {
+void insertIndex(vector<T>& a, size_t i, const T& v) {
   a.insert(a.begin()+i, v);
 }
 
 template <class T>
-void insertIndex(vector<T>& a, int i, int n, const T& v) {
+void insertIndex(vector<T>& a, size_t i, size_t n, const T& v) {
   a.insert(a.begin()+i, n, v);
 }
 

@@ -17,7 +17,7 @@ using std::swap;
 // -------------
 
 template <class T>
-int pagerankMonolithicOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, int N, T p, T E, int L, int EF) {
+int pagerankMonolithicOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<size_t>& vfrom, const vector<int>& efrom, int i, int n, int N, T p, T E, int L, int EF) {
   T  c0 = (1-p)/N;
   int l = 0;
   while (l<L) {

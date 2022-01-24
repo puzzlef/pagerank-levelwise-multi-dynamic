@@ -10,8 +10,8 @@ using std::string;
 // -----------
 // For counting temporal edges.
 
-int countLines(const char *x) {
-  int a = 1;
+size_t countLines(const char *x) {
+  size_t a = 1;
   for (; *x; x++) {
     if (*x == '\r' || *x == '\n') a++;
     else if (*x == '\r' && *(x+1) == '\n') x++;
@@ -19,6 +19,6 @@ int countLines(const char *x) {
   return a;
 }
 
-int countLines(const string& x) {
+size_t countLines(const string& x) {
   return countLines(x.c_str());
 }

@@ -23,7 +23,7 @@ using std::swap;
 // -------------
 
 template <class T, class J>
-int pagerankComponentwiseOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, const J& ns, int N, T p, T E, int L, int EF) {
+int pagerankComponentwiseOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<size_t>& vfrom, const vector<int>& efrom, int i, const J& ns, int N, T p, T E, int L, int EF) {
   float l = 0;
   for (int n : ns) {
     if (n<=0) { i += -n; continue; }

@@ -96,7 +96,7 @@ void pagerankFactor(vector<T>& a, const vector<int>& vdata, int i, int n, T p) {
 // For rank calculation from in-edges.
 
 template <class T>
-void pagerankCalculate(vector<T>& a, const vector<T>& c, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, T c0) {
+void pagerankCalculate(vector<T>& a, const vector<T>& c, const vector<size_t>& vfrom, const vector<int>& efrom, int i, int n, T c0) {
   for (int v=i; v<i+n; v++)
     a[v] = c0 + sumAt(c, sliceIter(efrom, vfrom[v], vfrom[v+1]));
 }
