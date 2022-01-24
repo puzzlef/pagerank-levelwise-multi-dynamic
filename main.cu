@@ -30,19 +30,28 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
   default_random_engine rnd(dev());
 
   for (int i=0; i<steps; i++) {
+    printf("Performing operation `selfLoop()` ...\n");
     auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
+    printf("Performing operation `transposeWithDegree()` ...\n");
     auto xt = transposeWithDegree(x);
+    printf("Performing operation `vertices()` ...\n");
     auto ksOld = vertices(x);
     // pagerankNvgraph(x, xt, init, {repeat});
+    printf("Performing operation `pagerankMonolithicCuda()` ...\n");
     auto a0 = pagerankMonolithicCuda(x, xt, init, {repeat});
     auto r0 = a0.ranks;
 
     // Add random edges for this batch.
+    printf("Performing operation `copy()` ...\n");
     auto yo = copy(xo);
+    printf("Performing operation `addRandomEdge()` ...\n");
     for (int i=0; i<batch; i++)
       addRandomEdge(yo, rnd, span);
+    printf("Performing operation `selfLoop()` ...\n");
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
+    printf("Performing operation `transposeWithDegree()` ...\n");
     auto yt = transposeWithDegree(y);
+    printf("Performing operation `vertices()` ...\n");
     auto ks = vertices(y);
     vector<T> s0(y.span());
     int X = ksOld.size();
@@ -50,11 +59,15 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
     // INSERTIONS:
     // Adjust ranks for insertions.
+    printf("Performing operation `adjustRanks()` ...\n");
     adjustRanks(s0, r0, ksOld, ks, 0.0f, float(X)/(Y+1), 1.0f/(Y+1));
 
     // Find Pagerank data.
+    printf("Performing operation `components()` ...\n");
     auto cs  = components(y, yt);
+    printf("Performing operation `blockgraph()` ...\n");
     auto b   = blockgraph(y, cs);
+    printf("Performing operation `transpose()` ...\n");
     auto bt  = transpose(b);
     PagerankData<G> D {move(b), move(bt), move(cs)};
 
@@ -140,11 +153,15 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     // Adjust ranks for deletions.
     auto s1 = b0.ranks;
     vector<T> r1(x.span());
+    printf("Performing operation `adjustRanks()` ...\n");
     adjustRanks(r1, s1, ks, ksOld, 0.0f, float(Y)/(X+1), 1.0f/(X+1));
 
     // Find Pagerank data.
+    printf("Performing operation `components()` ...\n");
     auto ds = components(x, xt);
+    printf("Performing operation `blockgraph()` ...\n");
     auto c  = blockgraph(x, ds);
+    printf("Performing operation `transpose()` ...\n");
     auto ct = transpose(c);
     PagerankData<G> E {move(c), move(ct), move(ds)};
 
@@ -243,7 +260,7 @@ int main(int argc, char **argv) {
   char *file = argv[1];
   int repeat = argc>2? stoi(argv[2]) : 5;
   printf("Loading graph %s ...\n", file);
-  auto fs = [&](float p) { printf("Loading graph %s [%04.1f] ...\n", file, 100*p); };
+  auto fs = [&](float p) { printf("Reading edges [%04.1f]% ...\n", file, 100*p); };
   auto x  = readMtx(file, fs); println(x);
   runPagerank(x, repeat);
   printf("\n");
