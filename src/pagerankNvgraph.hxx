@@ -31,7 +31,7 @@ PagerankResult<T> pagerankNvgraphCore(const G& xt, const vector<T> *q=nullptr, P
   vector<T> ranks(N);
   if (N==0) return {ranks};
   auto ks    = vertices(xt);
-  auto vfrom = sourceOffsetsAs(xt, uint());
+  auto vfrom = sourceOffsetsAs(xt, int());
   auto efrom = destinationIndices(xt);
   auto vdata = vertexData(xt, ks, [&](int v) { return xt.vertexData(v)==0? T(1) : T(); });
   auto edata = edgeData(xt, ks, [&](int v, int u) { return T(1)/xt.vertexData(u); });
