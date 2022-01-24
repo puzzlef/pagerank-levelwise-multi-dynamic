@@ -9,6 +9,8 @@ using std::vector;
 using std::iter_swap;
 using std::find_if;
 using std::lower_bound;
+using std::sort;
+using std::unique;
 
 
 
@@ -100,8 +102,11 @@ class BitsetSorted {
   // Write operations
   public:
   void correct() {
-    auto fl = [](const auto& a, const auto& b) { return a.first < b.first; };
+    auto fl = [](const auto& a, const auto& b) { return a.first <  b.first; };
+    auto fe = [](const auto& a, const auto& b) { return a.first == b.first; };
     sort(ids.begin(), ids.end(), fl);
+    auto it = unique(ids.begin(), ids.end(), fe);
+    ids.resize(it - ids.begin());
   }
 
   void clear() {
@@ -114,11 +119,11 @@ class BitsetSorted {
     (*it).second = v;
   }
 
-  void addUnchecked(int id, T v=T()) {
+  void add(int id, T v=T()) {
     ids.push_back({id, v});
   }
 
-  void add(int id, T v=T()) {
+  void addChecked(int id, T v=T()) {
     auto it = where(id);
     if (it != ids.end() && (*it).first == id) return;
     ids.insert(it, {id, v});

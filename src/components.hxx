@@ -64,6 +64,7 @@ void blockgraph(H& a, const G& x, const vector2d<int>& cs) {
     for (int v : x.edges(u))
       if (c[u] != c[v]) a.addEdge(c[u], c[v]);
   }
+  a.correct();
 }
 
 template <class G>

@@ -54,8 +54,11 @@ class DiGraph {
   // Write operations
   public:
   void correct() {
-    for (int u : vertices())
+    M = 0;
+    for (int u : vertices()) {
       edata[u].correct();
+      M += degree(u);
+    }
   }
 
   void clear() {
@@ -76,14 +79,14 @@ class DiGraph {
     N++;
   }
 
-  void addEdgeUnchecked(int u, int v, E d=E()) {
+  void addEdge(int u, int v, E d=E()) {
     addVertex(u);
     addVertex(v);
-    edata[u].addUnchecked(v, d);
+    edata[u].add(v, d);
     M++;
   }
 
-  void addEdge(int u, int v, E d=E()) {
+  void addEdgeChecked(int u, int v, E d=E()) {
     if (hasEdge(u, v)) return;
     addVertex(u);
     addVertex(v);

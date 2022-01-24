@@ -49,8 +49,8 @@ void readMtx(G& a, istream& s, FS fs) {
     int u, v;
     ls = stringstream(ln);
     if (!(ls >> u >> v)) break;
-    a.addEdgeUnchecked(u, v);
-    if (sym) a.addEdgeUnchecked(v, u);
+    a.addEdge(u, v);
+    if (sym) a.addEdge(v, u);
     if (++events<=10000000) continue;
     fs(a.size()/float(sz)); events = 0;
   }

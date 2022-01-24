@@ -47,6 +47,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     printf("Performing operation `addRandomEdge()` ...\n");
     for (int i=0; i<batch; i++)
       addRandomEdge(yo, rnd, span);
+    yo.correct();
     printf("Performing operation `selfLoop()` ...\n");
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     printf("Performing operation `transposeWithDegree()` ...\n");
@@ -260,7 +261,7 @@ int main(int argc, char **argv) {
   char *file = argv[1];
   int repeat = argc>2? stoi(argv[2]) : 5;
   printf("Loading graph %s ...\n", file);
-  auto fs = [&](float p) { printf("Reading edges [%04.1f]% ...\n", file, 100*p); };
+  auto fs = [&](float p) { printf("Reading edges [%04.1f]%% ...\n", 100*p); };
   auto x  = readMtx(file, fs); println(x);
   runPagerank(x, repeat);
   printf("\n");
