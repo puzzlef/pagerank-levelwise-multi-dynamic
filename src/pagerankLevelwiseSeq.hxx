@@ -34,12 +34,19 @@ using std::move;
 template <class G, class H, class T=float>
 PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> *q=nullptr, const PagerankOptions<T>& o={}, const PagerankData<G> *D=nullptr) {
   int  N  = xt.order();  if (N==0) return PagerankResult<T>::initial(xt, q);
+  printf("pagerankLevelwiseSeq: `componentsD()` ...\n");
   const auto& cs = componentsD(x, xt, D);
+  printf("pagerankLevelwiseSeq: `blockgraphD()` ...\n");
   const auto& b  = blockgraphD(x, cs, D);
+  printf("pagerankLevelwiseSeq: `blockgraphTransposeD()` ...\n");
   const auto& bt = blockgraphTransposeD(b, D);
+  printf("pagerankLevelwiseSeq: `levelwiseGroupedComponentsFrom()` ...\n");
   auto gs = levelwiseGroupedComponentsFrom(cs, bt);
+  printf("pagerankLevelwiseSeq: `transformIter()` ...\n");
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
+  printf("pagerankLevelwiseSeq: `join()` ...\n");
   auto ks = join<int>(gs);
+  printf("pagerankLevelwiseSeq: `pagerankSeq()` ...\n");
   return pagerankSeq(xt, ks, 0, ns, pagerankComponentwiseSeqLoop<T, decltype(ns)>, q, o);
 }
 template <class G, class T=float>

@@ -125,7 +125,7 @@ void addRandomEdge(G& a, R& rnd, int span) {
 template <class G, class R>
 void addRandomEdgeByDegree(G& a, R& rnd, int span) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  double deg = a.size() / a.span();
+  double deg = double(a.size()) / a.span();
   int un = int(dis(rnd) * deg * span);
   int vn = int(dis(rnd) * deg * span);
   int u = -1, v = -1, n = 0;
@@ -168,7 +168,7 @@ bool removeRandomEdge(G& a, R& rnd) {
 template <class G, class R>
 bool removeRandomEdgeByDegree(G& a, R& rnd) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  int v = int(dis(rnd) * a.size()), n = 0;
+  size_t v = int(dis(rnd) * a.size()), n = 0;
   for (int u : a.vertices()) {
     if (v > n+a.degree(u)) n += a.degree(u);
     else return removeRandomEdge(a, rnd, u);
