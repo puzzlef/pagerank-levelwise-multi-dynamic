@@ -35,7 +35,7 @@ PagerankResult<T> pagerankLevelwiseOmp(const G& x, const H& xt, const vector<T> 
   const auto& cs = componentsD(x, xt, D);
   const auto& b  = blockgraphD(x, cs, D);
   const auto& bt = blockgraphTransposeD(b, D);
-  auto gs = levelwiseGroupedComponentsFrom(cs, bt);
+  auto gs = levelwiseGroupedComponentsFrom(cs, b, bt);
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
   auto ks = join<int>(gs);
   return pagerankOmp(xt, ks, 0, ns, pagerankComponentwiseOmpLoop<T, decltype(ns)>, q, o);
@@ -58,7 +58,7 @@ PagerankResult<T> pagerankLevelwiseOmpDynamic(const G& x, const H& xt, const G& 
   const auto& cs = componentsD(y, yt, D);
   const auto& b  = blockgraphD(y, cs, D);
   const auto& bt = blockgraphTransposeD(b, D);
-  auto gi = levelwiseGroupIndices(bt);
+  auto gi = levelwiseGroupIndices(b, bt);
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto ig = groupBy<int>(sliceIter(is, 0, n), [&](int i) { return gi[i]; });
   auto gs = joinAt2d<int>(cs, ig);

@@ -41,7 +41,7 @@ PagerankResult<T> pagerankLevelwiseSeq(const G& x, const H& xt, const vector<T> 
   printf("pagerankLevelwiseSeq: `blockgraphTransposeD()` ...\n");
   const auto& bt = blockgraphTransposeD(b, D);
   printf("pagerankLevelwiseSeq: `levelwiseGroupedComponentsFrom()` ...\n");
-  auto gs = levelwiseGroupedComponentsFrom(cs, bt);
+  auto gs = levelwiseGroupedComponentsFrom(cs, b, bt);
   printf("pagerankLevelwiseSeq: `transformIter()` ...\n");
   auto ns = transformIter(gs, [&](const auto& g) { return g.size(); });
   printf("pagerankLevelwiseSeq: `join()` ...\n");
@@ -67,7 +67,7 @@ PagerankResult<T> pagerankLevelwiseSeqDynamic(const G& x, const H& xt, const G& 
   const auto& cs = componentsD(x, xt, D);
   const auto& b  = blockgraphD(x, cs, D);
   const auto& bt = blockgraphTransposeD(b, D);
-  auto gi = levelwiseGroupIndices(bt);
+  auto gi = levelwiseGroupIndices(b, bt);
   auto [is, n] = dynamicComponentIndices(x, y, cs, b);  if (n==0) return PagerankResult<T>::initial(yt, q);
   auto ig = groupBy<int>(sliceIter(is, 0, n), [&](int i) { return gi[i]; });
   auto gs = joinAt2d<int>(cs, ig);
