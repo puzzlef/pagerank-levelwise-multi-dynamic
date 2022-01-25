@@ -109,11 +109,12 @@ auto affectedVertices(const G& x, const H& xt, const G& y, const H& yt) {
 
 template <class G, class FA>
 auto dynamicVerticesBy(const G& y, FA fa) {
-  vector<int> a; unordered_set<int> aff;
-  fa([&](int u) { a.push_back(u); aff.insert(u); });
+  vector<int> a; vector<bool> aff(y.span());
+  fa([&](int u) { a.push_back(u); aff[u] = true; });
+  size_t affs = a.size();
   for (int u : y.vertices())
-    if (aff.count(u)==0) a.push_back(u);
-  return make_pair(a, aff.size());
+    if (!aff[u]) a.push_back(u);
+  return make_pair(a, affs);
 }
 
 template <class G>
@@ -201,11 +202,12 @@ auto affectedComponentIndices(const G& x, const H& xt, const G& y, const H& yt, 
 
 template <class G, class FA>
 auto dynamicComponentIndicesBy(const G& y, const vector2d<int>& cs, FA fa) {
-  vector<int> a; unordered_set<int> aff;
-  fa([&](int i) { a.push_back(i); aff.insert(i); });
+  vector<int> a; vector<bool> aff(cs.size());
+  fa([&](int i) { a.push_back(i); aff[i] = true; });
+  size_t affs = a.size();
   for (int i=0, I=cs.size(); i<I; ++i)
-    if (aff.count(i)==0) a.push_back(i);
-  return make_pair(a, aff.size());
+    if (!aff[i]) a.push_back(i);
+  return make_pair(a, affs);
 }
 
 template <class G, class B>
