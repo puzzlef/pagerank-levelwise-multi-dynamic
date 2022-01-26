@@ -1,6 +1,5 @@
-
 #!/usr/bin/env bash
-src="pagerank-push-vs-pull"
+src="kitchen-sink"
 out="/home/resources/Documents/subhajit/$src.log"
 ulimit -s unlimited
 printf "" > "$out"
@@ -11,11 +10,7 @@ git clone https://github.com/puzzlef/$src
 cd $src
 
 # Run
-g++ -O3 main.cxx
-stdbuf --output=L ./a.out ~/data/min-1DeadEnd.mtx      2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out ~/data/min-2SCC.mtx          2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out ~/data/min-4SCC.mtx          2>&1 | tee -a "$out"
-stdbuf --output=L ./a.out ~/data/min-NvgraphEx.mtx     2>&1 | tee -a "$out"
+nvcc -std=c++17 -Xcompiler -fopenmp -lnvgraph -O3 main.cu
 stdbuf --output=L ./a.out ~/data/web-Stanford.mtx      2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/web-BerkStan.mtx      2>&1 | tee -a "$out"
 stdbuf --output=L ./a.out ~/data/web-Google.mtx        2>&1 | tee -a "$out"
