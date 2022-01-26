@@ -34,5 +34,6 @@ bool readSnapTemporal(G& a, istream& s, int N, bool sym=false) {
     string ln; getline(s, ln);
     if (!readSnapTemporalLine(a, ln, sym)) break;
   }
+  a.correct();
   return i>0;
 }

@@ -14,9 +14,10 @@ void copyTo(H& a, const G& x, FV fv, FE fe) {
   // add edges
   for (int u : x.vertices()) {
     if (fv(u)) for (int v : x.edges(u)) {
-      if (fv(v) && fe(u, v)) a.addEdge(u, v, x.edgeData(u, v));
+      if (fv(v) && fe(u, v)) a.addEdge(u, v); // x.edgeData(u, v)
     }
   }
+  a.correct();
 }
 
 template <class H, class G, class FV>

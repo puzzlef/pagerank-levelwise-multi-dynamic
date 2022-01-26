@@ -9,6 +9,8 @@ using std::vector;
 using std::iter_swap;
 using std::find_if;
 using std::lower_bound;
+using std::sort;
+using std::unique;
 
 
 
@@ -72,6 +74,7 @@ class BitsetUnsorted {
 template <class T=NONE>
 class BitsetSorted {
   vector<pair<int, T>> ids;
+  bool dirty;
 
   // Cute helpers
   private:
@@ -99,6 +102,16 @@ class BitsetSorted {
 
   // Write operations
   public:
+  void correct() {
+    if (!dirty) return;
+    auto fl = [](const auto& a, const auto& b) { return a.first <  b.first; };
+    auto fe = [](const auto& a, const auto& b) { return a.first == b.first; };
+    sort(ids.begin(), ids.end(), fl);
+    auto it = unique(ids.begin(), ids.end(), fe);
+    ids.resize(it - ids.begin());
+    dirty = false;
+  }
+
   void clear() {
     ids.clear();
   }
@@ -110,6 +123,11 @@ class BitsetSorted {
   }
 
   void add(int id, T v=T()) {
+    ids.push_back({id, v});
+    dirty = true;
+  }
+
+  void addChecked(int id, T v=T()) {
     auto it = where(id);
     if (it != ids.end() && (*it).first == id) return;
     ids.insert(it, {id, v});

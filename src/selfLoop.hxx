@@ -47,6 +47,7 @@ template <class G, class F>
 void selfLoopTo(G& a, F fn) {
   for (int u : a.vertices())
     if (fn(u)) a.addEdge(u, u);
+  a.correct();
 }
 
 template <class G, class F>

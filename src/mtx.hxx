@@ -51,6 +51,7 @@ void readMtx(G& a, istream& s) {
     a.addEdge(u, v);
     if (sym) a.addEdge(v, u);
   }
+  a.correct();
 }
 
 auto readMtx(istream& s) {
