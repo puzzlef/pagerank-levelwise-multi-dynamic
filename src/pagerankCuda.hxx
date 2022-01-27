@@ -257,11 +257,11 @@ PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL 
   auto vfrom = sourceOffsets(xt, ks);
   auto efrom = destinationIndices(xt, ks);
   auto vdata = vertexData(xt, ks);
-  int VFROM1 = vfrom.size() * sizeof(int);
-  int EFROM1 = efrom.size() * sizeof(int);
-  int VDATA1 = vdata.size() * sizeof(int);
-  int N1 = N * sizeof(T);
-  int R1 = R * sizeof(T);
+  size_t VFROM1 = vfrom.size() * sizeof(int);
+  size_t EFROM1 = efrom.size() * sizeof(int);
+  size_t VDATA1 = vdata.size() * sizeof(int);
+  size_t N1 = N * sizeof(T);
+  size_t R1 = R * sizeof(T);
   vector<T> a(N), r(N), qc;
   if (q) qc = compressContainer(xt, *q, ks);
 
