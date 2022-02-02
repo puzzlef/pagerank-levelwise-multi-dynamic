@@ -18,6 +18,12 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
   auto e = l1Norm(b.ranks, a.ranks);
   print(x); printf(" [%09.3f ms; %03d iters.] [%.4e err.] %s\n", b.time, b.iterations, e, tec);
 }
+template <class G, class T>
+void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b, const char *tec, int minCompute) {
+  auto e = l1Norm(b.ranks, a.ranks);
+  print(x); printf(" [%09.3f ms; %03d iters.] [%.4e err.] %s [min-compute=%.0e]\n", b.time, b.iterations, e, tec, (double) minCompute);
+}
+
 
 template <class G>
 void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
@@ -111,29 +117,31 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto j3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA, true}, &D);
     printRow(y, b0, j3, "I:pagerankMonolithicCudaSplit (dynamic)");
 
+    for (int minCompute=10000; minCompute<=MIN_COMPUTE_CUDA; minCompute*=10) {
     // Find sequential Levelwise pagerank.
-    auto b4 = pagerankLevelwiseSeq(y, yt, init, {repeat, Li}, &D);
-    printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)");
-    auto c4 = pagerankLevelwiseSeq(y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, c4, "I:pagerankLevelwiseSeq (incremental)");
-    auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, d4, "I:pagerankLevelwiseSeq (dynamic)");
+    auto b4 = pagerankLevelwiseSeq(y, yt, init, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)", minCompute);
+    auto c4 = pagerankLevelwiseSeq(y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, c4, "I:pagerankLevelwiseSeq (incremental)", minCompute);
+    auto d4 = pagerankLevelwiseSeqDynamic(x, xt, y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, d4, "I:pagerankLevelwiseSeq (dynamic)", minCompute);
 
     // Find OpenMP-based Levelwise pagerank.
-    auto b5 = pagerankLevelwiseOmp(y, yt, init, {repeat, Li}, &D);
-    printRow(y, b0, b5, "I:pagerankLevelwiseOmp (static)");
-    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, c5, "I:pagerankLevelwiseOmp (incremental)");
-    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, d5, "I:pagerankLevelwiseOmp (dynamic)");
+    auto b5 = pagerankLevelwiseOmp(y, yt, init, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, b5, "I:pagerankLevelwiseOmp (static)", minCompute);
+    auto c5 = pagerankLevelwiseOmp(y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, c5, "I:pagerankLevelwiseOmp (incremental)", minCompute);
+    auto d5 = pagerankLevelwiseOmpDynamic(x, xt, y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, d5, "I:pagerankLevelwiseOmp (dynamic)", minCompute);
 
     // Find CUDA-based Levelwise pagerank.
-    auto b6 = pagerankLevelwiseCuda(y, yt, init, {repeat, Li}, &D);
-    printRow(y, b0, b6, "I:pagerankLevelwiseCuda (static)");
-    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, c6, "I:pagerankLevelwiseCuda (incremental)");
-    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
-    printRow(y, b0, d6, "I:pagerankLevelwiseCuda (dynamic)");
+    auto b6 = pagerankLevelwiseCuda(y, yt, init, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, b6, "I:pagerankLevelwiseCuda (static)", minCompute);
+    auto c6 = pagerankLevelwiseCuda(y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, c6, "I:pagerankLevelwiseCuda (incremental)", minCompute);
+    auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, {repeat, Li, minCompute}, &D);
+    printRow(y, b0, d6, "I:pagerankLevelwiseCuda (dynamic)", minCompute);
+    }
 
     // DELETIONS:
     // Adjust ranks for deletions.
@@ -201,29 +209,31 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto m3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
     printRow(y, e0, m3, "D:pagerankMonolithicCudaSplit (dynamic)");
 
+    for (int minCompute=10000; minCompute<=MIN_COMPUTE_CUDA; minCompute*=10) {
     // Find sequential Levelwise pagerank.
-    auto e4 = pagerankLevelwiseSeq(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)");
-    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f4, "D:pagerankLevelwiseSeq (incremental)");
-    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g4, "D:pagerankLevelwiseSeq (dynamic)");
+    auto e4 = pagerankLevelwiseSeq(x, xt, init, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)", minCompute);
+    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, f4, "D:pagerankLevelwiseSeq (incremental)", minCompute);
+    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, g4, "D:pagerankLevelwiseSeq (dynamic)", minCompute);
 
     // Find OpenMP-based Levelwise pagerank.
-    auto e5 = pagerankLevelwiseOmp(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e5, "D:pagerankLevelwiseOmp (static)");
-    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f5, "D:pagerankLevelwiseOmp (incremental)");
-    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g5, "D:pagerankLevelwiseOmp (dynamic)");
+    auto e5 = pagerankLevelwiseOmp(x, xt, init, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, e5, "D:pagerankLevelwiseOmp (static)", minCompute);
+    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, f5, "D:pagerankLevelwiseOmp (incremental)", minCompute);
+    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, g5, "D:pagerankLevelwiseOmp (dynamic)", minCompute);
 
     // Find CUDA-based Levelwise pagerank.
-    auto e6 = pagerankLevelwiseCuda(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e6, "D:pagerankLevelwiseCuda (static)");
-    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)");
-    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)");
+    auto e6 = pagerankLevelwiseCuda(x, xt, init, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, e6, "D:pagerankLevelwiseCuda (static)", minCompute);
+    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)", minCompute);
+    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, minCompute}, &E);
+    printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)", minCompute);
+    }
   }
 }
 
