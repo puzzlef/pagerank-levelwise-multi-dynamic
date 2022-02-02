@@ -5,7 +5,7 @@ const path = require('path');
 const RGRAPH = /^Loading graph .*\/(.*?)\.mtx \.\.\./m;
 const RORDER = /^order: (\d+) size: (\d+) {}$/m;
 const RBATCH = /^# Batch size ([\d\.e+-]+)/;
-const RRESLT = /^order: (\d+) size: (\d+) \{\} \[(.*?) ms; (\d+) iters\.\] \[(.*?) err\.\] (.*)/m;
+const RRESLT = /^order: (\d+) size: (\d+) \{\} \[(.*?) ms; (\d+) iters\.\] \[(.*?) err\.\] ([^\[]*)(?:\[min-compute=(.*?)\])?/m;
 
 
 
@@ -76,14 +76,15 @@ function readLogLine(ln, data, state) {
     state.batch_size = parseFloat(batch_size);
   }
   else if (RRESLT.test(ln)) {
-    var [, order, size, time, iters, err, technique] = RRESLT.exec(ln);
+    var [, order, size, time, iters, err, technique, min_compute] = RRESLT.exec(ln);
     data.get(state.graph).push(Object.assign({}, state, {
-      order:      parseFloat(order),
-      size:       parseFloat(size),
-      time:       parseFloat(time),
-      iterations: parseFloat(iters),
-      error:      parseFloat(err),
-      technique
+      order:       parseFloat(order),
+      size:        parseFloat(size),
+      time:        parseFloat(time),
+      iterations:  parseFloat(iters),
+      error:       parseFloat(err),
+      technique:   technique.trim(),
+      min_compute: parseFloat(min_compute||'0')
     }));
   }
   return state;
