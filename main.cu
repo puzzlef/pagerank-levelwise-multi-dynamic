@@ -117,7 +117,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto j3 = pagerankMonolithicCudaDynamic(x, xt, y, yt, &s0, {repeat, Li, MIN_COMPUTE_CUDA, true}, &D);
     printRow(y, b0, j3, "I:pagerankMonolithicCudaSplit (dynamic)");
 
-    for (int minCompute=10000; minCompute<=MIN_COMPUTE_CUDA; minCompute*=10) {
+    for (int minCompute=1; minCompute<=1000000000; minCompute*=10) {
     // Find sequential Levelwise pagerank.
     auto b4 = pagerankLevelwiseSeq(y, yt, init, {repeat, Li, minCompute}, &D);
     printRow(y, b0, b4, "I:pagerankLevelwiseSeq (static)", minCompute);
@@ -209,7 +209,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto m3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
     printRow(y, e0, m3, "D:pagerankMonolithicCudaSplit (dynamic)");
 
-    for (int minCompute=10000; minCompute<=MIN_COMPUTE_CUDA; minCompute*=10) {
+    for (int minCompute=1; minCompute<=1000000000; minCompute*=10) {
     // Find sequential Levelwise pagerank.
     auto e4 = pagerankLevelwiseSeq(x, xt, init, {repeat, Li, minCompute}, &E);
     printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)", minCompute);
