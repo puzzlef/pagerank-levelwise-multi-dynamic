@@ -172,7 +172,7 @@ void pagerankPairWave(vector<array<int,2>>& a, const H& xt, const vector2d<int>&
   for (const auto& ks : cs) {
     int N = ks.size();
     int s = pagerankSwitchPoint(xt, ks);
-    a.push_back({s, N-s});
+    a.push_back({-s, N-s});
   }
 }
 
