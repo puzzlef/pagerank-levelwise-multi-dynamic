@@ -55,7 +55,14 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto cs  = components(y, yt);
     auto b   = blockgraph(y, cs);
     auto bt  = transpose(b);
+    auto gs  = levelwiseGroupedComponentsFrom(cs, bt);
+    auto [yks, yn] = dynamicVertices(x, xt, y, yt);
+    auto [ycs, ym] = dynamicComponentIndices(x, xt, y, yt, cs, b);
     PagerankData<G> D {move(b), move(bt), move(cs)};
+    printf("- I:components: %d\n", b.order());
+    printf("- I:blockgraph-levels: %d\n", gs.size());
+    printf("- I:affected-vertices: %d\n", yn);
+    printf("- I:affected-components: %d\n", ym);
 
     // Find nvGraph-based pagerank.
     auto b0 = pagerankNvgraph(y, yt, init, {repeat});
@@ -145,7 +152,14 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto ds = components(x, xt);
     auto c  = blockgraph(x, ds);
     auto ct = transpose(c);
+    auto hs  = levelwiseGroupedComponentsFrom(ds, ct);
+    auto [xks, xn] = dynamicVertices(y, yt, x, xt);
+    auto [xds, xm] = dynamicComponentIndices(y, yt, x, xt, ds, c);
     PagerankData<G> E {move(c), move(ct), move(ds)};
+    printf("- D:components: %d\n", c.order());
+    printf("- D:blockgraph-levels: %d\n", hs.size());
+    printf("- D:affected-vertices: %d\n", xn);
+    printf("- D:affected-components: %d\n", xm);
 
     // Find nvGraph-based pagerank.
     auto e0 = pagerankNvgraph(x, xt, init, {repeat, Li});
