@@ -5,6 +5,7 @@ const path = require('path');
 const RGRAPH = /^Loading graph .*\/(.*?)\.mtx \.\.\./m;
 const RORDER = /^order: (\d+) size: (\d+) {}$/m;
 const RBATCH = /^# Batch size ([\d\.e+-]+)/;
+const RFIELD = /^- \w:([\w\-]+): (.+)/m;
 const RRESLT = /^order: (\d+) size: (\d+) \{\} \[(.*?) ms; (\d+) iters\.\] \[(.*?) err\.\] (.*)/m;
 
 
@@ -74,6 +75,10 @@ function readLogLine(ln, data, state) {
   else if (RBATCH.test(ln)) {
     var [, batch_size] = RBATCH.exec(ln);
     state.batch_size = parseFloat(batch_size);
+  }
+  else if (RFIELD.test(ln)) {
+    var [, key, value] = RFIELD.exec(ln);
+    state[key] = parseFloat(value);
   }
   else if (RRESLT.test(ln)) {
     var [, order, size, time, iters, err, technique] = RRESLT.exec(ln);
