@@ -244,8 +244,9 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
 template <class G>
 void runPagerank(const G& x, int repeat) {
+  vector<int> batches {1, 500, 1000, 2000, 5000, 10000};
   int M = x.size(), steps = 5;
-  for (int batch=500, i=1; batch<=10000; batch*=i&1? 2:5, i++) {
+  for (int batch : batches) {
     printf("\n# Batch size %.0e\n", (double) batch);
     runPagerankBatch(x, repeat, steps, batch);
   }
