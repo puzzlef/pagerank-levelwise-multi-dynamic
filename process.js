@@ -5,7 +5,7 @@ const path = require('path');
 const RGRAPH = /^Loading graph .*\/(.*?)\.mtx \.\.\./m;
 const RORDER = /^order: (\d+) size: (\d+) {}$/m;
 const RBATCH = /^# Batch size ([\d\.e+-]+)/;
-const RFIELD = /^- \w:([\w\-]+): (.+)/m;
+const RFIELD = /^- ([\w\-]+): (.+)/m;
 const RRESLT = /^order: (\d+) size: (\d+) \{\} \[(.*?) ms; (\d+) iters\.\] \[(.*?) err\.\] (.*)/m;
 
 
