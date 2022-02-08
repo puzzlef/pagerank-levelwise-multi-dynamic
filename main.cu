@@ -23,7 +23,7 @@ template <class G>
 void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
   using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
-  int span = int(1.1 * xo.span());
+  int span = int(1 * xo.span());
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
   random_device dev;
@@ -42,6 +42,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
       removeRandomEdgeByDegree(yo, rnd);
     for (int i=0; i<ceilDiv(batch, 2); i++)
       addRandomEdgeByDegree(yo, rnd, span);
+    yo.correct();
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
