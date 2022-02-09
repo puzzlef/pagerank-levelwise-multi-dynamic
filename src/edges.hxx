@@ -3,13 +3,14 @@
 #include <iterator>
 #include <algorithm>
 #include <random>
+#include <utility>
 #include "_main.hxx"
 
 using std::vector;
 using std::uniform_real_distribution;
+using std::make_pair;
 using std::transform;
 using std::back_inserter;
-
 
 
 
@@ -175,9 +176,9 @@ inline bool removeEdge(G& a, const pair<int, int>& uv) {
 template <class G, class R>
 auto suggestRemoveRandomEdge(const G& x, R& rnd, int u) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  if (a.degree(u) == 0) return false;
-  int vi = int(dis(rnd) * a.degree(u)), i = 0;
-  for (int v : a.edges(u))
+  if (x.degree(u) == 0) return make_pair(-1, -1);
+  int vi = int(dis(rnd) * x.degree(u)), i = 0;
+  for (int v : x.edges(u))
     if (i++ == vi) return make_pair(u, v);
   return make_pair(-1, -1);
 }

@@ -27,13 +27,14 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 }
 
 template <class G>
-void runPagerankBatch(const G& xo, const GraphDelta& delta, int repeat, int batch) {
+void runPagerankBatch(const G& xr, const GraphDelta& delta, int repeat, int batch) {
   using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
   int DD = delta.deletions.size();
   int DI = delta.insertions.size();
+  auto xo = copy(xr);
 
   for (int di=0, ii=0; di<DD || ii<DI;) {
     auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
@@ -173,10 +174,10 @@ auto createMixedGraphDelta(const G& x, int del, int ins) {
 
 template <class G>
 void runPagerank(const G& x, int repeat) {
-  vector<int> batches {1, 500, 1000, 2000, 5000, 10000};
-  int steps = 5; int B = batches.back();
+  vector<int> batches {1, 500, 1000, 2000};
+  int steps = 1; int B = batches.back();
   for (int step=0; step<steps; ++step) {
-    printf("\n# Step %d\n", step);
+    // printf("\n# Step %d\n", step);
     GraphDelta delta = createMixedGraphDelta(x, B/2, B/2);
     for (int batch : batches) {
       printf("\n# Batch size %.0e\n", (double) batch);
