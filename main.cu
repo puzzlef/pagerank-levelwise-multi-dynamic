@@ -13,6 +13,13 @@ using namespace std;
 
 #define MIN_COMPUTE_CUDA 10000000
 
+
+struct GraphDelta {
+  vector<pair<int, int>> deletions;
+  vector<pair<int, int>> insertions;
+};
+
+
 template <class G, class T>
 void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b, const char *tec) {
   auto e = l1Norm(b.ranks, a.ranks);
@@ -20,16 +27,15 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 }
 
 template <class G>
-void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
+void runPagerankBatch(const G& xo, const GraphDelta& delta, int repeat, int batch) {
   using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
-  int span = int(1 * xo.span());
   vector<T> r0, s0, r1, s1;
   vector<T> *init = nullptr;
-  random_device dev;
-  default_random_engine rnd(dev());
+  int DD = delta.deletions.size();
+  int DI = delta.insertions.size();
 
-  for (int i=0; i<steps; i++) {
+  for (int di=0, ii=0; di<DD || ii<DI;) {
     auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
     auto xt = transposeWithDegree(x);
     auto ksOld = vertices(x);
@@ -38,10 +44,13 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
     // Add random edges for this batch.
     auto yo = copy(xo);
-    for (int i=0; i<batch/2; i++)
-      removeRandomEdgeByDegree(yo, rnd);
-    for (int i=0; i<ceilDiv(batch, 2); i++)
-      addRandomEdgeByDegree(yo, rnd, span);
+    int  db = di<=ii? min(ceilDiv(batch, 2), DD-di) : 0;
+    int  ib = min(batch-db, DI-ii);
+    for (int j=0; j<db; j++)
+      removeEdge(yo, delta.deletions[di++]);
+    for (int j=0; j<ib; j++)
+      addEdge(yo, delta.insertions[ii++]);
+    yo.correct();
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
     auto yt = transposeWithDegree(y);
     auto ks = vertices(y);
@@ -144,115 +153,35 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto d6 = pagerankLevelwiseCudaDynamic(x, xt, y, yt, &s0, {repeat, Li}, &D);
     printRow(y, b0, d6, "pagerankLevelwiseCuda (dynamic)");
 
-    /*
-    // DELETIONS:
-    // Adjust ranks for deletions.
-    auto s1 = b0.ranks;
-    vector<T> r1(x.span());
-    adjustRanks(r1, s1, ks, ksOld, 0.0f, float(Y)/(X+1), 1.0f/(X+1));
-
-    // Find Pagerank data.
-    auto ds = components(x, xt);
-    auto c  = blockgraph(x, ds);
-    auto ct = transpose(c);
-    auto hs  = levelwiseGroupedComponentsFrom(ds, ct);
-    auto [xks, xn] = dynamicVertices(y, yt, x, xt);
-    auto [xds, xm] = dynamicComponentIndices(y, yt, x, xt, ds, c);
-    PagerankData<G> E {move(c), move(ct), move(ds)};
-    printf("- D:components: %d\n", c.order());
-    printf("- D:blockgraph-levels: %d\n", hs.size());
-    printf("- D:affected-vertices: %d\n", xn);
-    printf("- D:affected-components: %d\n", xm);
-
-    // Find nvGraph-based pagerank.
-    auto e0 = pagerankNvgraph(x, xt, init, {repeat, Li});
-    printRow(y, e0, e0, "D:pagerankNvgraph (static)");
-    auto f0 = pagerankNvgraph(x, xt, &r1, {repeat, Li});
-    printRow(y, e0, f0, "D:pagerankNvgraph (incremental)");
-
-    // Find sequential Monolithic pagerank.
-    // auto e1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li}, &E);
-    // printRow(y, e0, e1, "D:pagerankMonolithicSeq (static)");
-    // auto f1 = pagerankMonolithicSeq(x, xt, &r1, {repeat, Li}, &E);
-    // printRow(y, e0, f1, "D:pagerankMonolithicSeq (incremental)");
-    // auto g1 = pagerankMonolithicSeqDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    // printRow(y, e0, g1, "D:pagerankMonolithicSeq (dynamic)");
-
-    // Find sequential Monolithic pagerank (split).
-    auto k1 = pagerankMonolithicSeq(x, xt, init, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, k1, "D:pagerankMonolithicSeqSplit (static)");
-    auto l1 = pagerankMonolithicSeq(x, xt, &r1, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, l1, "D:pagerankMonolithicSeqSplit (incremental)");
-    auto m1 = pagerankMonolithicSeqDynamic(y, yt, x, xt, &r1, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, m1, "D:pagerankMonolithicSeqSplit (dynamic)");
-
-    // Find OpenMP-based Monolithic pagerank.
-    // auto e2 = pagerankMonolithicOmp(x, xt, init, {repeat, Li}, &E);
-    // printRow(y, e0, e2, "D:pagerankMonolithicOmp (static)");
-    // auto f2 = pagerankMonolithicOmp(x, xt, &r1, {repeat, Li}, &E);
-    // printRow(y, e0, f2, "D:pagerankMonolithicOmp (incremental)");
-    // auto g2 = pagerankMonolithicOmpDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    // printRow(y, e0, g2, "D:pagerankMonolithicOmp (dynamic)");
-
-    // Find OpenMP-based Monolithic pagerank.
-    auto k2 = pagerankMonolithicOmp(x, xt, init, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, k2, "D:pagerankMonolithicOmpSplit (static)");
-    auto l2 = pagerankMonolithicOmp(x, xt, &r1, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, l2, "D:pagerankMonolithicOmpSplit (incremental)");
-    auto m2 = pagerankMonolithicOmpDynamic(y, yt, x, xt, &r1, {repeat, Li, 1, true}, &E);
-    printRow(y, e0, m2, "D:pagerankMonolithicOmpSplit (dynamic)");
-
-    // Find CUDA-based Monolithic pagerank.
-    // auto e3 = pagerankMonolithicCuda(x, xt, init, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    // printRow(y, e0, e3, "D:pagerankMonolithicCuda (static)");
-    // auto f3 = pagerankMonolithicCuda(x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    // printRow(y, e0, f3, "D:pagerankMonolithicCuda (incremental)");
-    // auto g3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA}, &E);
-    // printRow(y, e0, g3, "D:pagerankMonolithicCuda (dynamic)");
-
-    // Find CUDA-based Monolithic pagerank (split).
-    auto k3 = pagerankMonolithicCuda(x, xt, init, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
-    printRow(y, e0, k3, "D:pagerankMonolithicCudaSplit (static)");
-    auto l3 = pagerankMonolithicCuda(x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
-    printRow(y, e0, l3, "D:pagerankMonolithicCudaSplit (incremental)");
-    auto m3 = pagerankMonolithicCudaDynamic(y, yt, x, xt, &r1, {repeat, Li, MIN_COMPUTE_CUDA, true}, &E);
-    printRow(y, e0, m3, "D:pagerankMonolithicCudaSplit (dynamic)");
-
-    // Find sequential Levelwise pagerank.
-    auto e4 = pagerankLevelwiseSeq(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e4, "D:pagerankLevelwiseSeq (static)");
-    auto f4 = pagerankLevelwiseSeq(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f4, "D:pagerankLevelwiseSeq (incremental)");
-    auto g4 = pagerankLevelwiseSeqDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g4, "D:pagerankLevelwiseSeq (dynamic)");
-
-    // Find OpenMP-based Levelwise pagerank.
-    auto e5 = pagerankLevelwiseOmp(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e5, "D:pagerankLevelwiseOmp (static)");
-    auto f5 = pagerankLevelwiseOmp(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f5, "D:pagerankLevelwiseOmp (incremental)");
-    auto g5 = pagerankLevelwiseOmpDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g5, "D:pagerankLevelwiseOmp (dynamic)");
-
-    // Find CUDA-based Levelwise pagerank.
-    auto e6 = pagerankLevelwiseCuda(x, xt, init, {repeat, Li}, &E);
-    printRow(y, e0, e6, "D:pagerankLevelwiseCuda (static)");
-    auto f6 = pagerankLevelwiseCuda(x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, f6, "D:pagerankLevelwiseCuda (incremental)");
-    auto g6 = pagerankLevelwiseCudaDynamic(y, yt, x, xt, &r1, {repeat, Li}, &E);
-    printRow(y, e0, g6, "D:pagerankLevelwiseCuda (dynamic)");
-    */
+    // Move ahead.
+    xo = move(yo);
   }
 }
 
 
 template <class G>
+auto createMixedGraphDelta(const G& x, int del, int ins) {
+  GraphDelta a;
+  random_device dev;
+  default_random_engine rnd(dev());
+  for (int i=0; i<del; ++i)
+    a.deletions.push_back(suggestRemoveRandomEdgeByDegree(x, rnd));
+  for (int i=0; i<ins; ++i)
+    a.insertions.push_back(suggestAddRandomEdgeByDegree(x, rnd, x.span()));
+  return a;
+}
+
+template <class G>
 void runPagerank(const G& x, int repeat) {
   vector<int> batches {1, 500, 1000, 2000, 5000, 10000};
-  int M = x.size(), steps = 5;
-  for (int batch : batches) {
-    printf("\n# Batch size %.0e\n", (double) batch);
-    runPagerankBatch(x, repeat, steps, batch);
+  int steps = 5; int B = batches.back();
+  for (int step=0; step<steps; ++step) {
+    printf("\n# Step %d\n", step);
+    GraphDelta delta = createMixedGraphDelta(x, B/2, B/2);
+    for (int batch : batches) {
+      printf("\n# Batch size %.0e\n", (double) batch);
+      runPagerankBatch(x, delta, repeat, batch);
+    }
   }
 }
 

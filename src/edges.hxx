@@ -113,31 +113,48 @@ bool someEdgesVisited(const G& x, int u, const vector<bool>& vis) {
 // ADD-RANDOM-EDGE
 // ---------------
 
-template <class G, class R>
-void addRandomEdge(G& a, R& rnd, int span) {
-  uniform_real_distribution<> dis(0.0, 1.0);
-  int u = int(dis(rnd) * span);
-  int v = int(dis(rnd) * span);
+template <class G>
+inline bool addEdge(G& a, const pair<int, int>& uv) {
+  auto [u, v] = uv;
+  if (u < 0 || v < 0) return false;
   a.addEdge(u, v);
+  return true;
 }
 
 
 template <class G, class R>
-void addRandomEdgeByDegree(G& a, R& rnd, int span) {
+auto suggestAddRandomEdge(const G& x, R& rnd, int span) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  double deg = a.size() / a.span();
+  int u = int(dis(rnd) * span);
+  int v = int(dis(rnd) * span);
+  return make_pair(u, v);
+}
+template <class G, class R>
+inline bool addRandomEdge(G& a, R& rnd, int span) {
+  return addEdge(a, suggestAddRandomEdge(a, rnd, span));
+}
+
+
+template <class G, class R>
+auto suggestAddRandomEdgeByDegree(const G& x, R& rnd, int span) {
+  uniform_real_distribution<> dis(0.0, 1.0);
+  double deg = x.size() / x.span();
   int un = int(dis(rnd) * deg * span);
   int vn = int(dis(rnd) * deg * span);
   int u = -1, v = -1, n = 0;
-  for (int w : a.vertices()) {
-    if (un<0 && un > n+a.degree(w)) u = w;
-    if (vn<0 && vn > n+a.degree(w)) v = w;
+  for (int w : x.vertices()) {
+    if (un<0 && un > n+x.degree(w)) u = w;
+    if (vn<0 && vn > n+x.degree(w)) v = w;
     if (un>0 && vn>=0) break;
-    n += a.degree(w);
+    n += x.degree(w);
   }
   if (u<0) u = int(un/deg);
   if (v<0) v = int(vn/deg);
-  a.addEdge(u, v);
+  return make_pair(u, v);
+}
+template <class G, class R>
+inline bool addRandomEdgeByDegree(G& a, R& rnd, int span) {
+  return addEdge(a, suggestAddRandomEdgeByDegree(a, rnd, span));
 }
 
 
@@ -146,32 +163,53 @@ void addRandomEdgeByDegree(G& a, R& rnd, int span) {
 // REMOVE-RANDOM-EDGE
 // ------------------
 
+template <class G>
+inline bool removeEdge(G& a, const pair<int, int>& uv) {
+  auto [u, v] = uv;
+  if (u < 0 || v < 0) return false;
+  a.removeEdge(u, v);
+  return true;
+}
+
+
 template <class G, class R>
-bool removeRandomEdge(G& a, R& rnd, int u) {
+auto suggestRemoveRandomEdge(const G& x, R& rnd, int u) {
   uniform_real_distribution<> dis(0.0, 1.0);
   if (a.degree(u) == 0) return false;
   int vi = int(dis(rnd) * a.degree(u)), i = 0;
   for (int v : a.edges(u))
-    if (i++ == vi) { a.removeEdge(u, v); return true; }
-  return false;
+    if (i++ == vi) return make_pair(u, v);
+  return make_pair(-1, -1);
+}
+template <class G, class R>
+inline bool removeRandomEdge(G& a, R& rnd, int u) {
+  return removeEdge(a, suggestRemoveRandomEdge(a, rnd, u));
 }
 
 
 template <class G, class R>
-bool removeRandomEdge(G& a, R& rnd) {
+auto suggestRemoveRandomEdge(const G& x, R& rnd) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  int u = int(dis(rnd) * a.span());
-  return removeRandomEdge(a, rnd, u);
+  int u = int(dis(rnd) * x.span());
+  return suggestRemoveRandomEdge(x, rnd, u);
+}
+template <class G, class R>
+inline bool removeRandomEdge(G& a, R& rnd) {
+  return removeEdge(a, suggestRemoveRandomEdge(a, rnd));
 }
 
 
 template <class G, class R>
-bool removeRandomEdgeByDegree(G& a, R& rnd) {
+auto suggestRemoveRandomEdgeByDegree(const G& x, R& rnd) {
   uniform_real_distribution<> dis(0.0, 1.0);
-  int v = int(dis(rnd) * a.size()), n = 0;
-  for (int u : a.vertices()) {
-    if (v > n+a.degree(u)) n += a.degree(u);
-    else return removeRandomEdge(a, rnd, u);
+  int v = int(dis(rnd) * x.size()), n = 0;
+  for (int u : x.vertices()) {
+    if (v > n+x.degree(u)) n += x.degree(u);
+    else return suggestRemoveRandomEdge(x, rnd, u);
   }
-  return false;
+  return make_pair(-1, -1);
+}
+template <class G, class R>
+inline bool removeRandomEdgeByDegree(G& a, R& rnd) {
+  return removeEdge(a, suggestRemoveRandomEdgeByDegree(a, rnd));
 }
