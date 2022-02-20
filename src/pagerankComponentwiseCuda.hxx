@@ -25,19 +25,19 @@ using std::swap;
 // -------------
 
 template <class T, class J>
-int pagerankComponentwiseCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ws, int N, T p, T E, int L, int EF) {
-  float l = 0;
+float pagerankComponentwiseCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ws, int N, T p, T E, int L, int EF) {
+  float t = 0;
   for (const auto& w : ws) {
     const auto& [nt, nb] = w;
     int n = -nt + nb;  // thread no. is -ve
     if (n<=0) { i += -n; continue; }
     T np = T(n)/N, En = EF<=2? E*n/N : E;
-    l += pagerankMonolithicCudaLoop(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, w, N, p, En, L, EF)*np;
+    t += pagerankMonolithicCudaLoop(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, w, N, p, En, L, EF);
     swap(aD, rD);
     i += n;
   }
   swap(aD, rD);
-  return int(l);
+  return t;
 }
 
 

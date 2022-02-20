@@ -104,10 +104,10 @@ __global__ void pagerankBlockKernel(T *a, const T *c, const int *vfrom, const in
 }
 
 template <class T>
-void pagerankBlockCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+float pagerankBlockCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
   int B = BLOCK_DIM_PRCB<T>();
   int G = min(n, GRID_DIM_PRCB<T>());
-  pagerankBlockKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
+  return measureDurationCu([&]() { pagerankBlockKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0); });
 }
 
 
@@ -127,10 +127,10 @@ __global__ void pagerankThreadKernel(T *a, const T *c, const int *vfrom, const i
 }
 
 template <class T>
-void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
+float pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, int n, T c0) {
   int B = BLOCK_DIM_PRCT<T>();
   int G = min(ceilDiv(n, B), GRID_DIM_PRCT<T>());
-  pagerankThreadKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0);
+  return measureDurationCu([&]() { pagerankThreadKernel<<<G, B>>>(a, c, vfrom, efrom, i, n, c0); });
 }
 
 
@@ -140,12 +140,14 @@ void pagerankThreadCu(T *a, const T *c, const int *vfrom, const int *efrom, int 
 // -----------------
 
 template <class T, class J>
-void pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, const J& ns, T c0) {
+float pagerankSwitchedCu(T *a, const T *c, const int *vfrom, const int *efrom, int i, const J& ns, T c0) {
+  float t = 0;
   for (int n : ns) {
-    if (n>0) pagerankBlockCu (a, c, vfrom, efrom, i,  n, c0);
-    else     pagerankThreadCu(a, c, vfrom, efrom, i, -n, c0);
+    if (n>0) t += pagerankBlockCu (a, c, vfrom, efrom, i,  n, c0);
+    else     t += pagerankThreadCu(a, c, vfrom, efrom, i, -n, c0);
     i += abs(n);
   }
+  return t;
 }
 
 
@@ -285,14 +287,16 @@ PagerankResult<T> pagerankCuda(const H& xt, const J& ks, int i, const M& ns, FL 
   TRY( cudaMemcpy(efromD, efrom.data(), EFROM1, cudaMemcpyHostToDevice) );
   TRY( cudaMemcpy(vdataD, vdata.data(), VDATA1, cudaMemcpyHostToDevice) );
 
-  float t = measureDurationMarked([&](auto mark) {
+  float t = 0;
+  measureDurationMarked([&](auto mark) {
     if (q) copy(r, qc);    // copy old ranks (qc), if given
     else fill(r, T(1)/N);
     TRY( cudaMemcpy(aD, r.data(), N1, cudaMemcpyHostToDevice) );
     TRY( cudaMemcpy(rD, r.data(), N1, cudaMemcpyHostToDevice) );
     mark([&] { pagerankFactorCu(fD, vdataD, 0, N, p); multiplyCu(cD, aD, fD, N); });                       // calculate factors (fD) and contributions (cD)
-    mark([&] { l = fl(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, ns, N, p, E, L, EF); });  // calculate ranks of vertices
+    mark([&] { t += fl(e, r0, eD, r0D, aD, rD, cD, fD, vfromD, efromD, i, ns, N, p, E, L, EF); });  // calculate ranks of vertices
   }, o.repeat);
+  t /= o.repeat;
   TRY( cudaMemcpy(a.data(), aD, N1, cudaMemcpyDeviceToHost) );
 
   TRY( cudaFreeHost(e) );

@@ -35,10 +35,12 @@ void pagerankFactorOmp(vector<T>& a, const vector<int>& vdata, int i, int n, T p
 // For rank calculation from in-edges.
 
 template <class T>
-void pagerankCalculateOmp(vector<T>& a, const vector<T>& c, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, T c0) {
-  #pragma omp parallel for num_threads(32) schedule(auto)
-  for (int v=i; v<i+n; v++)
-    a[v] = c0 + sumAt(c, sliceIter(efrom, vfrom[v], vfrom[v+1]));
+float pagerankCalculateOmp(vector<T>& a, const vector<T>& c, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, T c0) {
+  return measureDuration([&]() {
+    #pragma omp parallel for num_threads(32) schedule(auto)
+    for (int v=i; v<i+n; v++)
+      a[v] = c0 + sumAt(c, sliceIter(efrom, vfrom[v], vfrom[v+1]));
+  });
 }
 
 
@@ -76,12 +78,14 @@ PagerankResult<T> pagerankOmp(const H& xt, const J& ks, int i, const M& ns, FL f
   auto vdata = vertexData(xt, ks);
   vector<T> a(N), r(N), c(N), f(N), qc;
   if (q) qc = compressContainer(xt, *q, ks);
-  float t = measureDurationMarked([&](auto mark) {
+  float t = 0;
+  measureDurationMarked([&](auto mark) {
     if (q) copyOmp(r, qc);    // copy old ranks (qc), if given
     else fillOmp(r, T(1)/N);
     copyOmp(a, r);
     mark([&] { pagerankFactorOmp(f, vdata, 0, N, p); multiplyOmp(c, a, f, 0, N); });  // calculate factors (f) and contributions (c)
-    mark([&] { l = fl(a, r, c, f, vfrom, efrom, i, ns, N, p, E, L, EF); });           // calculate ranks of vertices
+    mark([&] { t += fl(a, r, c, f, vfrom, efrom, i, ns, N, p, E, L, EF); });           // calculate ranks of vertices
   }, o.repeat);
+  t /= o.repeat;
   return {decompressContainer(xt, a, ks), l, t};
 }

@@ -133,6 +133,41 @@ void __syncthreads();
 
 
 
+// MEASURE-DUARATION
+// -----------------
+
+float durationMillisecondsCu(const cudaEvent_t& start, const cudaEvent_t& stop) {
+  float duration = 0;
+  cudaEventElapsedTime(&duration, start, stop);
+  return duration;
+}
+
+
+template <class F>
+float measureDurationCu(F fn, int N=1) {
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventRecord(start, 0);
+  for (int i=0; i<N; i++)
+    fn();
+  cudaEventCreate(&stop);
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+  return durationMillisecondsCu(start, stop)/N;
+}
+
+
+template <class F>
+float measureDurationMarkedCu(F fn, int N=1) {
+  float duration = 0;
+  for (int i=0; i<N; i++)
+    fn([&](auto fm) { duration += measureDurationCu(fm); });
+  return duration/N;
+}
+
+
+
+
 // REDUCE
 // ------
 

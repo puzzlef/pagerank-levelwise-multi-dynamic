@@ -22,22 +22,23 @@ using std::max;
 // -------------
 
 template <class T, class J>
-int pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ns, int N, T p, T E, int L, int EF) {
+float pagerankMonolithicCudaLoop(T *e, T *r0, T *eD, T *r0D, T *&aD, T *&rD, T *cD, const T *fD, const int *vfromD, const int *efromD, int i, const J& ns, int N, T p, T E, int L, int EF) {
   int n = sumAbs(ns);
   int R = reduceSizeCu<T>(n);
   size_t R1 = R * sizeof(T);
   T  c0 = (1-p)/N;
   int l = 0;
+  float t = 0;
   while (l<L) {
-    pagerankSwitchedCu(aD, cD, vfromD, efromD, i, ns, c0);  // assume contribtions (cD) is precalculated
+    t += pagerankSwitchedCu(aD, cD, vfromD, efromD, i, ns, c0);  // assume contribtions (cD) is precalculated
     pagerankErrorCu(eD, aD+i, rD+i, n, EF);
     TRY( cudaMemcpy(e, eD, R1, cudaMemcpyDeviceToHost) );
-    T el = pagerankErrorReduce(e, R, EF); ++l;              // one iteration complete
-    if (el<E || l>=L) break;                                // check tolerance, iteration limit
-    multiplyCu(cD+i, aD+i, fD+i, n);                        // update partial contributions (cD)
-    swap(aD, rD);                                           // final ranks always in (aD)
+    T el = pagerankErrorReduce(e, R, EF); ++l;                   // one iteration complete
+    if (el<E || l>=L) break;                                     // check tolerance, iteration limit
+    multiplyCu(cD+i, aD+i, fD+i, n);                             // update partial contributions (cD)
+    swap(aD, rD);                                                // final ranks always in (aD)
   }
-  return l;
+  return t;
 }
 
 

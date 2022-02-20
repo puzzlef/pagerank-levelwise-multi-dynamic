@@ -17,17 +17,18 @@ using std::swap;
 // -------------
 
 template <class T>
-int pagerankMonolithicOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, int N, T p, T E, int L, int EF) {
+float pagerankMonolithicOmpLoop(vector<T>& a, vector<T>& r, vector<T>& c, const vector<T>& f, const vector<int>& vfrom, const vector<int>& efrom, int i, int n, int N, T p, T E, int L, int EF) {
   T  c0 = (1-p)/N;
   int l = 0;
+  float t = 0;
   while (l<L) {
-    pagerankCalculateOmp(a, c, vfrom, efrom, i, n, c0);  // assume contribtions (c) is precalculated
-    T el = pagerankErrorOmp(a, r, i, n, EF); ++l;        // one iteration complete
-    if (el<E || l>=L) break;                             // check tolerance, iteration limit
-    multiplyOmp(c, a, f, i, n);                          // update partial contributions (c)
-    swap(a, r);                                          // final ranks always in (a)
+    t += pagerankCalculateOmp(a, c, vfrom, efrom, i, n, c0);  // assume contribtions (c) is precalculated
+    T el = pagerankErrorOmp(a, r, i, n, EF); ++l;             // one iteration complete
+    if (el<E || l>=L) break;                                  // check tolerance, iteration limit
+    multiplyOmp(c, a, f, i, n);                               // update partial contributions (c)
+    swap(a, r);                                               // final ranks always in (a)
   }
-  return l;
+  return t;
 }
 
 
