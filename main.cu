@@ -38,9 +38,11 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
     // Add random edges for this batch.
     auto yo = copy(xo);
-    for (int i=0; i<batch/2; i++)
-      removeRandomEdgeByDegree(yo, rnd);
-    for (int i=0; i<ceilDiv(batch, 2); i++)
+    // for (int i=0; i<batch/2; i++)
+    //   removeRandomEdgeByDegree(yo, rnd);
+    // for (int i=0; i<ceilDiv(batch, 2); i++)
+    //   addRandomEdgeByDegree(yo, rnd, span);
+    for (int i=0; i<batch; i++)
       addRandomEdgeByDegree(yo, rnd, span);
     yo.correct();
     auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
