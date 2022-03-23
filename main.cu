@@ -251,7 +251,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
 template <class G>
 void runPagerank(const G& x, int repeat) {
-  vector<int> batches {1, 500, 1000, 2000, 5000, 10000};
+  vector<int> batches {10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000};
   int M = x.size(), steps = 5;
   for (int batch : batches) {
     printf("\n# Batch size %.0e\n", (double) batch);
