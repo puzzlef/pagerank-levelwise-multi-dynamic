@@ -26,7 +26,7 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 
 
 template <class G>
-void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
+void runPagerankBatch(const G& xo, int repeat, int steps, float batchFraction) {
   using T = float;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   int span = int(1 * xo.span());
@@ -43,10 +43,11 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto r0 = a0.ranks;
 
     // Add random edges for this batch.
+    int batch = int(ceil(batchFraction * x.size()));
     auto yo = copy(xo);
-    for (int i=0; i<batch/2; i++)
+    for (int i=0; i<int(ceil(0.2*batch)); i++)
       removeRandomEdge(yo, rnd);
-    for (int i=0; i<ceilDiv(batch, 2); i++)
+    for (int i=0; i<int(ceil(0.8*batch)); i++)
       addRandomEdge(yo, rnd, span);
     // for (int i=0; i<batch; i++)
     //   addRandomEdgeByDegree(yo, rnd, span);
@@ -70,6 +71,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
     auto [yks, yn] = dynamicVertices(x, xt, y, yt);
     auto [ycs, ym] = dynamicComponentIndices(x, xt, y, yt, cs, b);
     PagerankData<G> D {move(b), move(bt), move(cs)};
+    printf("- batch update size: %d\n", batch);
     printf("- components: %d\n", b.order());
     printf("- blockgraph-levels: %zu\n", gs.size());
     printf("- affected-vertices: %zu\n", yn);
@@ -134,9 +136,9 @@ void runPagerankBatch(const G& xo, int repeat, int steps, int batch) {
 
 template <class G>
 void runPagerank(const G& x, int repeat) {
-  vector<int> batches {500, 1000, 2000, 5000, 10000};
+  vector<float> batches {1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1};
   int M = x.size(), steps = 5;
-  for (int batch : batches) {
+  for (float batch : batches) {
     printf("\n# Batch size %.0e\n", (double) batch);
     runPagerankBatch(x, repeat, steps, batch);
   }

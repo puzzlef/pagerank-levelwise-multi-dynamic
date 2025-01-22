@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=1
+#SBATCH --cpus-per-task=64
+#SBATCH --exclusive
+#SBATCH --job-name slurm
+#SBATCH --output=slurm.out
+# module load openmpi/4.1.5
+# module load hpcx-2.7.0/hpcx-ompi
+# source scl_source enable gcc-toolset-11
+# source /opt/rh/gcc-toolset-13/enable
+module load cuda/12.3
 src="pagerank-levelwise-multi-dynamic"
 out="$HOME/Logs/$src$1.log"
 ulimit -s unlimited
