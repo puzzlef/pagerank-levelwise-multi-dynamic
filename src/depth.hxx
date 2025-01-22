@@ -1,6 +1,6 @@
 #pragma once
 #include <tuple>
-#include "dfs.hxx"
+#include "dfs_old.hxx"
 #include "deadEnds.hxx"
 
 using std::make_tuple;

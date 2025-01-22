@@ -6,7 +6,7 @@
 #include "_main.hxx"
 #include "vertices.hxx"
 #include "edges.hxx"
-#include "dfs.hxx"
+#include "dfs_old.hxx"
 #include "components.hxx"
 
 using std::vector;
@@ -42,10 +42,10 @@ auto topologicalSort(const G& x) {
 
 template <class H, class F>
 void levelwiseSortDo(vector<bool>& visx, vector<bool>& vis, const H& xt, F fn) {
-  for (int u : xt.vertices()) {
+  xt.forEachVertexKey([&](auto u) {
     if (vis[u] || allEdgesVisited(xt, u, vis)) visx[u] = true;
     if (vis[u] != visx[u]) fn(u);
-  }
+  });
   swap(visx, vis);
 }
 template <class H>

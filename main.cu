@@ -20,7 +20,7 @@ using namespace std;
 
 template <class G, class T>
 void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b, const char *tec) {
-  auto e = l1Norm(b.ranks, a.ranks);
+  auto e = l1NormOmp(b.ranks, a.ranks);
   print(x); printf(" [%09.3f ms; %03d iters.] [%.4e err.] %s\n", b.time, b.iterations, e, tec);
 }
 
@@ -28,6 +28,8 @@ void printRow(const G& x, const PagerankResult<T>& a, const PagerankResult<T>& b
 template <class G>
 void runPagerankBatch(const G& xo, int repeat, int steps, float batchFraction) {
   using T = float;
+  using K = typename G::key_type;
+  using E = typename G::edge_value_type;
   enum NormFunction { L0=0, L1=1, L2=2, Li=3 };
   int span = int(1 * xo.span());
   vector<T> r0, s0, r1, s1;
@@ -36,24 +38,24 @@ void runPagerankBatch(const G& xo, int repeat, int steps, float batchFraction) {
   default_random_engine rnd(dev());
 
   for (int i=0; i<steps; i++) {
-    auto x  = selfLoop(xo, [&](int u) { return isDeadEnd(xo, u); });
-    auto xt = transposeWithDegree(x);
+    auto x  = addSelfLoopsOmp(xo, E(), [&](int u) { return isDeadEnd(xo, u); });
+    auto xt = transposeWithDegreeOmp(x);
     auto ksOld = vertices(x);
     auto a0 = pagerankMonolithicOmp(x, xt, init, {repeat});
     auto r0 = a0.ranks;
 
     // Add random edges for this batch.
     int batch = int(ceil(batchFraction * x.size()));
-    auto yo = copy(xo);
+    auto yo = duplicate(xo);
     for (int i=0; i<int(ceil(0.2*batch)); i++)
       removeRandomEdge(yo, rnd);
     for (int i=0; i<int(ceil(0.8*batch)); i++)
       addRandomEdge(yo, rnd, span);
     // for (int i=0; i<batch; i++)
     //   addRandomEdgeByDegree(yo, rnd, span);
-    yo.correct();
-    auto y  = selfLoop(yo, [&](int u) { return isDeadEnd(yo, u); });
-    auto yt = transposeWithDegree(y);
+    updateOmpU(yo);
+    auto y  = addSelfLoopsOmp(yo, E(), [&](int u) { return isDeadEnd(yo, u); });
+    auto yt = transposeWithDegreeOmp(y);
     auto ks = vertices(y);
     vector<T> s0(y.span());
     int X = ksOld.size();
@@ -66,7 +68,7 @@ void runPagerankBatch(const G& xo, int repeat, int steps, float batchFraction) {
     // Find Pagerank data.
     auto cs  = components(y, yt);
     auto b   = blockgraph(y, cs);
-    auto bt  = transpose(b);
+    auto bt  = transposeOmp(b);
     auto gs  = levelwiseGroupedComponentsFrom(cs, bt);
     auto [yks, yn] = dynamicVertices(x, xt, y, yt);
     auto [ycs, ym] = dynamicComponentIndices(x, xt, y, yt, cs, b);
@@ -150,7 +152,8 @@ int main(int argc, char **argv) {
   int repeat = argc>2? stoi(argv[2]) : 5;
   omp_set_num_threads(MAX_THREADS);
   printf("Loading graph %s ...\n", file);
-  auto x = readMtx(file); println(x);
+  DiGraph<> x;
+  readMtxOmpW(x, file); println(x);
   runPagerank(x, repeat);
   printf("\n");
   return 0;

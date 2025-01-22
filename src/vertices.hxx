@@ -18,7 +18,7 @@ using std::equal;
 template <class G, class F, class D>
 auto vertices(const G& x, F fm, D fp) {
   vector<int> a;
-  append(a, x.vertices());
+  x.forEachVertexKey([&](auto u) { a.push_back(u); });
   auto ie = a.end(), ib = a.begin();
   fp(ib, ie); transform(ib, ie, ib, fm);
   return a;
@@ -58,12 +58,12 @@ auto vertexData(const G& x, const J& ks, F fm) {
 
 template <class G, class J>
 auto vertexData(const G& x, const J& ks) {
-  return vertexData(x, ks, [&](int u) { return x.vertexData(u); });
+  return vertexData(x, ks, [&](int u) { return x.vertexValue(u); });
 }
 
 template <class G>
 auto vertexData(const G& x) {
-  return vertexData(x, x.vertices());
+  return vertexData(x, vertices(x));
 }
 
 
@@ -90,7 +90,7 @@ void decompressContainer(vector<T>& a, const G& x, const vector<T>& vs, const J&
 
 template <class G, class T>
 void decompressContainer(vector<T>& a, const G& x, const vector<T>& vs) {
-  decompressContainer(a, x, vs, x.vertices());
+  decompressContainer(a, x, vs, vertices(x));
 }
 
 template <class G, class T, class J>
@@ -102,7 +102,7 @@ auto decompressContainer(const G& x, const vector<T>& vs, const J& ks) {
 
 template <class G, class T>
 auto decompressContainer(const G& x, const vector<T>& vs) {
-  return decompressContainer(x, vs, x.vertices());
+  return decompressContainer(x, vs, vertices(x));
 }
 
 
@@ -113,7 +113,7 @@ void compressContainer(vector<T>& a, const G& x, const vector<T>& vs, const J& k
 
 template <class G, class T>
 void compressContainer(vector<T>& a, const G& x, const vector<T>& vs) {
-  return compressContainer(a, x, vs, x.vertices());
+  return compressContainer(a, x, vs, vertices(x));
 }
 
 template <class G, class T, class J>
@@ -137,7 +137,9 @@ auto compressContainer(const G& x, const vector<T>& vs) {
 template <class G>
 bool verticesEqual(const G& x, int u, const G& y, int v) {
   if (x.degree(u) != y.degree(v)) return false;
-  auto xe = x.edges(u), ye = y.edges(v);
+  vector<int> xe(x.degree(u)), ye(y.degree(v));
+  x.forEachEdgeKey(u, [&](auto ue) { xe.push_back(ue); });
+  y.forEachEdgeKey(v, [&](auto ve) { ye.push_back(ve); });
   return equal(xe.begin(), xe.end(), ye.begin());
 }
 

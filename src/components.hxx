@@ -2,7 +2,7 @@
 #include <vector>
 #include "_main.hxx"
 #include "vertices.hxx"
-#include "dfs.hxx"
+#include "dfs_old.hxx"
 
 using std::vector;
 
@@ -18,8 +18,9 @@ auto components(const G& x, const H& xt) {
   vector<int> vs;
   // original dfs
   auto vis = createContainer(x, bool());
-  for (int u : x.vertices())
+  x.forEachVertexKey([&](auto u) {
     if (!vis[u]) dfsEndLoop(vs, vis, x, u);
+  });
   // transpose dfs
   fill(vis, false);
   while (!vs.empty()) {
@@ -59,12 +60,13 @@ auto componentIds(const G& x, const vector2d<int>& cs) {
 template <class H, class G>
 void blockgraph(H& a, const G& x, const vector2d<int>& cs) {
   auto c = componentIds(x, cs);
-  for (int u : x.vertices()) {
+  x.forEachVertexKey([&](auto u) {
     a.addVertex(c[u]);
-    for (int v : x.edges(u))
+    x.forEachEdgeKey(u, [&](auto v) {
       if (c[u] != c[v]) a.addEdge(c[u], c[v]);
-  }
-  a.correct();
+    });
+  });
+  a.update();
 }
 
 template <class G>

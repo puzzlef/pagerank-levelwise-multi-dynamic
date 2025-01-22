@@ -1,359 +1,233 @@
 #pragma once
-#include <vector>
+// Avoid compiler error/bug "error: structured binding refers to incomplete type"
 #include <unordered_map>
-#include <iterator>
 #include <algorithm>
-#include <functional>
+#include "_queue.hxx"
 
-using std::vector;
-using std::unordered_map;
-using std::iterator_traits;
-using std::hash;
-using std::for_each;
-using std::any_of;
-using std::all_of;
-using std::find;
-using std::find_if;
-using std::lower_bound;
-using std::count;
-using std::count_if;
-using std::transform;
-using std::set_difference;
-using std::back_inserter;
+using std::copy;
 
 
 
 
-// FOR-EACH
-// --------
-// Perform a sale.
-
-template <class I, class F>
-auto forEach(I ib, I ie, F fn) {
-  return for_each(ib, ie, fn);
-}
-
-template <class J, class F>
-auto forEach(const J& x, F fn) {
-  return for_each(x.begin(), x.end(), fn);
-}
-
-template <class J, class F>
-auto forEach(J& x, F fn) {
-  return for_each(x.begin(), x.end(), fn);
+#pragma region METHODS
+/**
+ * Find the first element that does not match its adjacent element.
+ * @param ib begin iterator
+ * @param ie end iterator
+ * @param fe equality function (a, b)
+ * @returns iterator to the first non-adjacent element
+ */
+template <class I, class FE>
+inline I non_adjacent_find(I ib, I ie, FE fe) {
+  if (ib==ie) return ie;
+  // Compare adjacent elements, and if they
+  // dont match, return the first one.
+  I it = ib++;
+  for (; ib!=ie; ++it, ++ib)
+    if (!fe(*it, *ib)) return it;
+  // The last element must be non-adjacent.
+  return it;
 }
 
 
-
-
-// ANY-OF
-// ------
-// Is anything useful there?
-
-template <class I, class F>
-auto anyOf(I ib, I ie, F fn) {
-  return any_of(ib, ie, fn);
-}
-
-template <class J, class F>
-auto anyOf(const J& x, F fn) {
-  return any_of(x.begin(), x.end(), fn);
-}
-
-
-
-
-// ALL-OF
-// ------
-// Is everything there?
-
-template <class I, class F>
-auto allOf(I ib, I ie, F fn) {
-  return all_of(ib, ie, fn);
-}
-
-template <class J, class F>
-auto allOf(const J& x, F fn) {
-  return all_of(x.begin(), x.end(), fn);
-}
-
-
-
-
-// FIND
-// ----
-// Find a business or its address.
-
-template <class J, class T>
-auto find(const J& x, const T& v) {
-  return find(x.begin(), x.end(), v);
-}
-
-template <class J, class T>
-int findIndex(const J& x, const T& v) {
-  return find(x.begin(), x.end(), v) - x.begin();
-}
-
-template <class J, class T>
-int findEqIndex(const J& x, const T& v) {
-  auto it = find(x.begin(), x.end(), v);
-  return it==x.end()? -1 : it-x.begin();
-}
-
-
-template <class I, class F>
-auto findIf(I ib, I ie, F fn) {
-  return find_if(ib, ie, fn);
-}
-
-template <class J, class F>
-auto findIf(const J& x, F fn) {
-  return find_if(x.begin(), x.end(), fn);
-}
-
-template <class J, class F>
-int findIfIndex(const J& x, F fn) {
-  return find_if(x.begin(), x.end(), fn) - x.begin();
-}
-
-template <class J, class F>
-int findIfEqIndex(const J& x, F fn) {
-  auto it = find_if(x.begin(), x.end(), fn);
-  return it==x.end()? -1 : it-x.begin();
-}
-
-
-
-
-// LOWER-BOUND
-// -----------
-// Find closest business, or its address.
-
-template <class J, class T>
-auto lowerBound(const J& x, const T& v) {
-  return lower_bound(x.begin(), x.end(), v);
-}
-
-template <class J, class T, class F>
-auto lowerBound(const J& x, const T& v, F fl) {
-  return lower_bound(x.begin(), x.end(), v, fl);
-}
-
-template <class J, class T>
-int lowerBoundIndex(const J& x, const T& v) {
-  return lower_bound(x.begin(), x.end(), v) - x.begin();
-}
-
-template <class J, class T, class F>
-int lowerBoundIndex(const J& x, const T& v, F fl) {
-  return lower_bound(x.begin(), x.end(), v, fl) - x.begin();
-}
-
-template <class J, class T>
-int lowerBoundEqIndex(const J& x, const T& v) {
-  auto it = lower_bound(x.begin(), x.end(), v);
-  return it==x.end() || *it!=v? -1 : it-x.begin();
-}
-
-template <class J, class T, class F>
-int lowerBoundEqIndex(const J& x, const T& v, F fl) {
-  auto it = lower_bound(x.begin(), x.end(), v, fl);
-  return it==x.end() || *it!=v? -1 : it-x.begin();
-}
-
-template <class J, class T, class F, class G>
-int lowerBoundEqIndex(const J& x, const T& v, F fl, G fe) {
-  auto it = lower_bound(x.begin(), x.end(), v, fl);
-  return it==x.end() || !fe(*it, v)? -1 : it-x.begin();
-}
-
-
-
-
-// COUNT
-// -----
-// Count businesses in a sector.
-
-template <class J, class T>
-int count(const J& x, const T& v) {
-  return count(x.begin(), x.end(), v);
-}
-
-
-template <class I, class F>
-int countIf(I ib, I ie, F fn) {
-  return count_if(ib, ie, fn);
-}
-
-template <class J, class F>
-int countIf(const J& x, F fn) {
-  return count_if(x.begin(), x.end(), fn);
-}
-
-
-
-
-// COUNT-ALL
-// ---------
-// Count businesses in each sector.
-
+/**
+ * Find the first element that does not match its adjacent element.
+ * @param ib begin iterator
+ * @param ie end iterator
+ * @returns iterator to the first non-adjacent element
+ */
 template <class I>
-auto countAll(I ib, I ie) {
-  using K = typename iterator_traits<I>::value_type;
-  unordered_map<K, int> a;
-  for_each(ib, ie, [&](const auto& v) { a[v]++; });
-  return a;
-}
-
-template <class J>
-auto countAll(const J& x) {
-  return countAll(x.begin(), x.end());
+inline auto non_adjacent_find(I ib, I ie) {
+  auto fe = [](const auto& a, const auto& b) { return a == b; };
+  return non_adjacent_find(ib, ie, fe);
 }
 
 
 
 
-// INDICES
-// -------
-// Keep the address of each business (yellow pages).
-
-template <class I>
-auto indices(I ib, I ie) {
-  using K = typename iterator_traits<I>::value_type;
-  unordered_map<K, int> a; int i = -1;
-  for (I it=ib; it!=ie; ++it)
-    a[*it] = ++i;
-  return a;
-}
-
-template <class J>
-auto indices(const J& x) {
-  return indices(x.begin(), x.end());
-}
-
-
-
-
-// TRANSFORM
-// ---------
-// Switch around your portfolio.
-
-template <class J, class K, class F>
-void transform(const J& x, K& a, F fn) {
-  transform(x.begin(), x.end(), a.begin(), fn);
-}
-
-template <class J, class F>
-void transform(J& a, F fn) {
-  transform(a, a, fn);
-}
-
-
-
-
-// SORT
-// ----
-// Arrange your portfolio by ROCE.
-
-template <class J>
-void sort(J& x, int i, int n) {
-  sort(x.begin()+i, x.end()+i+n);
-}
-template <class J>
-void sort(J& x, int i) {
-  sort(x.begin()+i, x.end());
-}
-template <class J>
-void sort(J& x) {
-  sort(x.begin(), x.end());
-}
-
-
-
-
-// SET-DIFFERENCE
-// --------------
-
-template <class L, class J, class K>
-void setDifference(L& a, const J& x, const K& y) {
-  set_difference(x.begin(), x.end(), y.begin(), y.end(), a.begin());
-}
-
-template <class T, class J, class K>
-void setDifference(vector<T>& a, const J& x, const K& y) {
-  set_difference(x.begin(), x.end(), y.begin(), y.end(), back_inserter(a));
-}
-
-template <class J, class K>
-auto setDifference(const J& x, const K& y) {
-  using I = decltype(x.begin());
-  using T = typename iterator_traits<I>::value_type;
-  vector<T> a; setDifference(a, x, y);
+/**
+ * Obtain the index of each element in a container.
+ * @param ib begin iterator
+ * @param ie end iterator
+ * @param a map to store the index of each element (updated)
+ */
+template <class I, class M>
+inline void value_index(I ib, I ie, M& a) {
+  size_t i = 0;
+  for (; ib != ie; ++ib)
+    a[*ib] = i++;
   return a;
 }
 
 
 
 
-// WRITE
-// -----
-
-template <class T, class I>
-void write(vector<T>& a, I ib, I ie) {
-  a.clear();
-  a.insert(a.begin(), ib, ie);
-}
-
-template <class T, class J>
-void write(vector<T>& a, const J& vs) {
-  write(a, vs.begin(), vs.end());
-}
-
-
-
-
-// TO-*
-// ----
-
-template <class T, class I>
-auto toVector(I ib, I ie) {
-  vector<T> a; write(a, ib, ie);
-  return a;
-}
-
-template <class T, class J>
-void toVector(const J& x) {
-  return toVector<T>(x.begin(), x.end());
+/**
+ * Keep only the last unique element in a container.
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param ab begin iterator of output
+ * @param fe equality function (a, b)
+ * @returns iterator to the end of output
+ */
+template <class IX, class IA, class FE>
+inline IA unique_last_copy(IX xb, IX xe, IA ab, FE fe) {
+  if (xb==xe) return ab;
+  // Compare adjacent elements, and
+  // only copy non-matching ones.
+  IX it = xb++;
+  for (; xb!=xe; ++it, ++xb)
+  { if (!fe(*it, *xb)) *(ab++) = *it; }
+  // Copy the last unique element.
+  *(ab++) = *it;
+  return ab;
 }
 
 
-
-
-// HASH-VALUE
-// ----------
-
-template <class T, class I>
-size_t hashValue(vector<T>& vs, I ib, I ie) {
-  size_t a = 0;
-  write(vs, ib, ie); sort(vs);
-  for (const T& v : vs)
-    a ^= hash<T>{}(v) + 0x9e3779b9 + (a<<6) + (a>>2); // from boost::hash_combine
-  return a;
+/**
+ * Keep only the last unique element in a container.
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param ab begin iterator of output
+ * @returns iterator to the end of output
+ */
+template <class IX, class IA>
+inline IA unique_last_copy(IX xb, IX xe, IA ab) {
+  auto fe = [](const auto& a, const auto& b) { return a == b; };
+  return unique_last_copy(xb, xe, ab, fe);
 }
 
-template <class I>
-size_t hashValue(I ib, I ie) {
-  using T = typename I::value_type;
-  vector<T> vs;
-  return hashValue(vs, ib, ie);
+
+
+
+/**
+ * Keep elements in a container that are not in another container (in-place).
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param yb begin iterator of elements to remove
+ * @param ye end iterator of elements to remove
+ * @param fl less-than function (a, b)
+ * @param fe equality function (a, b)
+ * @returns iterator to the end of updated input
+ */
+template <class IX, class IY, class FL, class FE>
+inline IX set_difference_inplace(IX xb, IX xe, IY yb, IY ye, FL fl, FE fe) {
+  // Remove from `x`, elements given in `y`.
+  // Both `x` and `y` must be sorted.
+  if (xb==xe || yb==ye) return xe;
+  // Write-free loop when there is
+  // nothing to remove.
+  while (true) {
+    while (fl(*xb, *yb))
+    { if (++xb==xe) return xe; }
+    if (fe(*xb, *(yb++))) break;
+    if (yb==ye) return xe;
+  }
+  // There was a match, remove it.
+  IX it = xb++;
+  // Only one element needs removal.
+  if (xb==xe) return it;
+  // With-write loop when there are
+  // more elements to remove.
+   while (yb!=ye) {
+    while (fl(*xb, *yb)) {
+      *(it++) = *xb;
+      if (++xb==xe) return it;
+    }
+    if (fe(*xb, *(yb++)))
+    { if (++xb==xe) return it; }
+  }
+  // No more elements to remove.
+  // Shift the remaining elements.
+  return copy(xb, xe, it);
 }
 
-template <class T, class J>
-size_t hashValue(vector<T>& vs, const J& x) {
-  return hashValue(vs, x.begin(), x.end());
+
+/**
+ * Keep elements in a container that are not in another container (in-place).
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param yb begin iterator of elements to remove
+ * @param ye end iterator of elements to remove
+ * @returns iterator to the end of updated input
+ */
+template <class IX, class IY>
+inline IX set_difference_inplace(IX xb, IX xe, IY yb, IY ye) {
+  auto fl = [](const auto& a, const auto& b) { return a <  b; };
+  auto fe = [](const auto& a, const auto& b) { return a == b; };
+  return set_difference_inplace(xb, xe, yb, ye, fl, fe);
 }
 
-template <class J>
-size_t hashValue(const J& x) {
-  return hashValue(x.begin(), x.end());
+
+
+
+/**
+ * Find the set union of two containers, keeping the last element among matching ones (in-place).
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param yb begin iterator of elements to add
+ * @param ye end iterator of elements to add
+ * @param bb begin iterator of buffer, of size |y|+2+1
+ * @param be end iterator of buffer
+ * @param fl less-than function (a, b)
+ * @param fe equality function (a, b)
+ * @returns iterator to the end of updated input
+ */
+template <class IX, class IY, class IB, class FL, class FE>
+inline IX set_union_last_inplace(IX xb, IX xe, IY yb, IY ye, IB bb, IB be, FL fl, FE fe) {
+  // Add elements from `y` into `x`, preferring the last in `y` among matching elements.
+  // Both `x` and `y` must be sorted. There must be sufficient space in `x` and `b` (buffer = |y|+2+1).
+  if (yb==ye) return xe;
+  if (xb==xe) return unique_last_copy(yb, ye, xb);
+  // Deque-free loop when there
+  // is nothing to insert.
+  while (true) {
+    while (fl(*xb, *yb))
+      if (++xb==xe) return unique_last_copy(yb, ye, xb);
+    if (!fe(*xb, *yb)) break;
+    *xb = *yb;
+    if (++yb==ye) return xe;
+  }
+  // Insert smaller element from `y`, after
+  // saving the element in `x` to deque.
+  auto q = unsized_deque_view(bb, be);
+  IX it = xb;
+  q.push_back(*(xb++));
+  *it = *(yb++);
+  // With-deque loop when elements
+  // in `y` can be inserted into `x`.
+  while (yb!=ye) {
+    if (fe(*it, *yb)) *it = *(yb++);
+    else {
+      if (xb!=xe) q.push_back(*(xb++));
+      *(++it) = !q.empty() && fl(q.front(), *yb)? q.pop_front() : *(yb++);
+    }
+  }
+  // Continue until both `x` and
+  // the deque are empty.
+  while (true) {
+    if (xb!=xe) q.push_back(*(xb++));
+    if (q.empty()) break;
+    *(++it) = q.pop_front();
+  }
+  return ++it;
 }
+
+
+/**
+ * Find the set union of two containers, keeping the last element among matching ones (in-place).
+ * @param xb begin iterator of input (updated)
+ * @param xe end iterator of input (updated)
+ * @param yb begin iterator of elements to add
+ * @param ye end iterator of elements to add
+ * @param bb begin iterator of buffer
+ * @param be end iterator of buffer
+ * @returns iterator to the end of updated input
+ */
+template <class IX, class IY, class IB>
+inline auto set_union_last_inplace(IX xb, IX xe, IY yb, IY ye, IB bb, IB be) {
+  auto fl = [](const auto& a, const auto& b) { return a <  b; };
+  auto fe = [](const auto& a, const auto& b) { return a == b; };
+  return set_union_last_inplace(xb, xe, yb, ye, bb, be, fl, fe);
+}
+#pragma endregion

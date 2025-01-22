@@ -1,12 +1,16 @@
 #pragma once
+#define BUILD  0  // 5 == BUILD_TRACE
+#define OPENMP 1
+#define CUDA   1
 #include "_main.hxx"
-#include "DiGraph.hxx"
+#include "Graph.hxx"
 #include "vertices.hxx"
 #include "edges.hxx"
 #include "csr.hxx"
+#include "csr_old.hxx"
 #include "snap.hxx"
 #include "mtx.hxx"
-#include "copy.hxx"
+#include "duplicate.hxx"
 #include "transpose.hxx"
 #include "deadEnds.hxx"
 #include "selfLoop.hxx"

@@ -95,15 +95,19 @@ auto edgeData(const G& x) {
 
 template <class G>
 bool allEdgesVisited(const G& x, int u, const vector<bool>& vis) {
-  for (int v : x.edges(u))
-    if (!vis[v]) return false;
+  bool all = true;
+  x.forEachEdgeKey(u, [&](auto v) {
+    if (!vis[v]) all = false;
+  });
   return true;
 }
 
 template <class G>
 bool someEdgesVisited(const G& x, int u, const vector<bool>& vis) {
-  for (int v : x.edges(u))
-    if (vis[v]) return true;
+  bool some = false;
+  x.forEachEdgeKey(u, [&](auto v) {
+    if (vis[v]) some = true;
+  });
   return false;
 }
 
@@ -129,12 +133,12 @@ void addRandomEdgeByDegree(G& a, R& rnd, int span) {
   int un = int(dis(rnd) * deg * span);
   int vn = int(dis(rnd) * deg * span);
   int u = -1, v = -1, n = 0;
-  for (int w : a.vertices()) {
+  a.forEachVertexKey([&](auto w) {
     if (un<0 && un > n+a.degree(w)) u = w;
     if (vn<0 && vn > n+a.degree(w)) v = w;
-    if (un>0 && vn>=0) break;
+    if (un>0 && vn>=0) return;
     n += a.degree(w);
-  }
+  });
   if (u<0) u = int(un/deg);
   if (v<0) v = int(vn/deg);
   a.addEdge(u, v);
@@ -151,9 +155,12 @@ bool removeRandomEdge(G& a, R& rnd, int u) {
   uniform_real_distribution<> dis(0.0, 1.0);
   if (a.degree(u) == 0) return false;
   int vi = int(dis(rnd) * a.degree(u)), i = 0;
-  for (int v : a.edges(u))
-    if (i++ == vi) { a.removeEdge(u, v); return true; }
-  return false;
+  bool removed = false;
+  a.forEachEdgeKey(u, [&](auto v) {
+    if (removed) return;
+    if (i++ == vi) { a.removeEdge(u, v); removed = true; }
+  });
+  return removed;
 }
 
 

@@ -1,86 +1,326 @@
 #pragma once
-#include <cmath>
+#include <limits>
+#include <vector>
 #include <algorithm>
+#include <cstdint>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cuda_runtime.h>
-#include <cuda_profiler_api.h>
+#include <cooperative_groups.h>
+#include "_debug.hxx"
+#include "_cmath.hxx"
 
+using std::numeric_limits;
+using std::vector;
 using std::min;
 using std::max;
 using std::abs;
+using std::ceil;
 using std::fprintf;
 using std::exit;
 
 
 
 
-// LAUNCH CONFIG
-// -------------
+#pragma region KEYWORDS
+#ifndef __global__
+/** CUDA kernel function. */
+#define __global__
 
-// Limits
-#define BLOCK_LIMIT 1024
-#define GRID_LIMIT  65535
+/** CUDA host function. */
+#define __host__
 
-// For map-like operations
-template <class T>
-constexpr int BLOCK_DIM_M() noexcept { return 256; }
-template <class T>
-constexpr int GRID_DIM_M() noexcept  { return GRID_LIMIT; }
+/** CUDA device function. */
+#define __device__
 
-// For reduce-like operations
-template <class T=float>
-constexpr int BLOCK_DIM_RM() noexcept { return 256; }
-template <class T=float>
-constexpr int GRID_DIM_RM() noexcept  { return 1024; }
-template <class T=float>
-constexpr int BLOCK_DIM_RI() noexcept { return sizeof(T)<=4? 128:256; }
-template <class T=float>
-constexpr int GRID_DIM_RI() noexcept  { return 1024; }
-template <class T=float>
-constexpr int BLOCK_DIM_R() noexcept { return BLOCK_DIM_RM<T>(); }
-template <class T=float>
-constexpr int GRID_DIM_R() noexcept  { return GRID_DIM_RM<T>(); }
+/** CUDA shared memory. */
+#define __shared__
+
+/**
+ * Synchronize all threads in a block.
+ */
+#define __syncthreads()
 
 
+namespace cooperative_groups {
+/**
+ * A shell class that represents a block of threads in CUDA's cooperative groups.
+ * Provides basic methods for accessing thread information and synchronization.
+ */
+class thread_group {
+public:
+  /**
+   * Get the rank of the current thread within the group.
+   * @returns The rank (ID) of the thread in the group.
+   */
+  inline int __device__ thread_rank() const { return 0; }
+
+  /**
+   * Get the total number of threads in the group.
+   * @returns The total number of threads in the group.
+   */
+  inline int __device__ size() const { return 1; }
+
+  /**
+   * Synchronize all threads within the group.
+   */
+  __device__ void sync() const {}
+
+  /**
+   * Get the thread group for the current thread block.
+   * @returns The thread group for the current thread block.
+   */
+  thread_group this_thread_block() { return thread_group(); }
+
+  /**
+   * Get the thread group for the current grid.
+   * @returns The thread group for the current grid.
+   */
+  thread_group this_grid() { return thread_group(); }
+};
 
 
-// TRY
-// ---
-// Log error if CUDA function call fails.
+/**
+ * Partition the current thread block into smaller groups.
+ * @tparam SIZE number of threads per group
+ * @param g thread group to partition
+ * @returns partitioned thread group
+ */
+template <unsigned int SIZE, class T>
+inline thread_group tiled_partition(const T& g) { return thread_group(); }
+}
+#endif
+#pragma endregion
 
+
+
+
+#pragma region TYPES
+/** 64-bit signed integer (CUDA specific). */
+typedef long long int          int64_cu;
+/** 64-bit unsigned integer (CUDA specific). */
+typedef unsigned long long int uint64_cu;
+// - https://stackoverflow.com/a/32862733/1413259
+
+
+/**
+ * A pair of values (CUDA specific).
+ * @tparam T1 first value type
+ * @tparam T2 second value type
+ */
+template <class T1, class T2>
+struct pair_cu {
+  T1 first;
+  T2 second;
+
+  /** Default constructor [host/device function]. */
+  inline __host__ __device__ pair_cu()
+  : first(), second() {}
+
+  /**
+   * Define a pair of values [host/device function].
+   * @param first first value
+   * @param second second value
+   */
+  inline __host__ __device__ pair_cu(T1 first, T2 second)
+  : first(first), second(second) {}
+};
+
+
+/**
+ * Make a pair of values [host/device function].
+ * @param first first value
+ * @param second second value
+ * @returns pair of values
+ */
+template <class T1, class T2>
+inline __host__ __device__ pair_cu<T1, T2> makePairCu(T1&& first, T2&& second) {
+  return pair_cu<T1, T2>(first, second);
+}
+#pragma endregion
+
+
+
+
+#pragma region LAUNCH CONFIG
+#ifndef BLOCK_LIMIT_CUDA
+/** Maximum number of threads per block. */
+#define BLOCK_LIMIT_CUDA         1024
+/** Maximum number of threads per block, when using a map-like kernel. */
+#define BLOCK_LIMIT_MAP_CUDA     256
+/** Maximum number of threads per block, when using a reduce-like kernel. */
+#define BLOCK_LIMIT_REDUCE_CUDA  256
+#endif
+
+
+#ifndef GRID_LIMIT_CUDA
+/** Maximum number of blocks per grid. */
+#define GRID_LIMIT_CUDA          2147483647  // 2^31 - 1
+/** Maximum number of blocks per grid, when using a map-like kernel. */
+#define GRID_LIMIT_MAP_CUDA      65535
+/** Maximum number of blocks per grid, when using a reduce-like kernel. */
+#define GRID_LIMIT_REDUCE_CUDA   1024
+#endif
+
+
+/**
+ * Get the block size for kernel launch, based on number of elements to process.
+ * @tparam COARSE an element-per-block kernel?
+ * @param N number of elements to process
+ * @param BLIM block limit
+ * @returns block size
+ */
+template <bool COARSE=false>
+inline int blockSizeCu(size_t N, int BLIM=BLOCK_LIMIT_CUDA) noexcept {
+  return COARSE? BLIM : int(min(N, size_t(BLIM)));
+}
+
+
+/**
+ * Get the grid size for kernel launch, based on number of elements to process.
+ * @tparam COARSE an element-per-block kernel?
+ * @param N number of elements to process
+ * @param B block size
+ * @param GLIM grid limit
+ * @returns grid size
+ */
+template <bool COARSE=false>
+inline int gridSizeCu(size_t N, int B, int GLIM=GRID_LIMIT_CUDA) noexcept {
+  return COARSE? int(min(N, size_t(GLIM))) : int(min(ceilDiv(N, size_t(B)), size_t(GLIM)));
+}
+
+
+/**
+ * Get the number of elements produced by a reduce-like kernel.
+ * @tparam COARSE an element-per-block kernel?
+ * @param N number of elements to process
+ * @returns number of reduced elements
+ */
+template <bool COARSE=false>
+inline int reduceSizeCu(size_t N) noexcept {
+  const int B = blockSizeCu<COARSE>(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu <COARSE>(N, B, GRID_LIMIT_REDUCE_CUDA);
+  return G;
+}
+#pragma endregion
+
+
+
+
+#pragma region TRY
 #ifndef TRY_CUDA
-void tryCuda(cudaError err, const char* exp, const char* func, int line, const char* file) {
+/**
+ * Log error on CUDA function call failure.
+ * @param err error code
+ * @param exp expression string
+ * @param func current function name
+ * @param line current line number
+ * @param file current file name
+ */
+void tryFailedCuda(cudaError err, const char* exp, const char* func, int line, const char* file) {
   if (err == cudaSuccess) return;
   fprintf(stderr,
-    "%s: %s\n"
+    "ERROR: %s: %s\n"
     "  in expression %s\n"
     "  at %s:%d in %s\n",
     cudaGetErrorName(err), cudaGetErrorString(err), exp, func, line, file);
   exit(err);
 }
 
-#define TRY_CUDA(exp) tryCuda(exp, #exp, __func__, __LINE__, __FILE__)
+/**
+ * Try to execute a CUDA function call.
+ * @param exp expression to execute
+ */
+#define TRY_CUDA(exp)  do { cudaError err = exp; if (err != cudaSuccess) tryFailedCuda(err, #exp, __func__, __LINE__, __FILE__); } while (0)
+
+/**
+ * Try to execute a CUDA function call only if build mode is error or higher.
+ * @param exp expression to execute
+ **/
+#define TRY_CUDAE(exp)  PERFORME(TRY_CUDA(exp))
+
+/**
+ * Try to execute a CUDA function call only if build mode is warning or higher.
+ * @param exp expression to execute
+ **/
+#define TRY_CUDAW(exp)  PERFORMW(TRY_CUDA(exp))
+
+/**
+ * Try to execute a CUDA function call only if build mode is info or higher.
+ * @param exp expression to execute
+ **/
+#define TRY_CUDAI(exp)  PERFORMI(TRY_CUDA(exp))
+
+/**
+ * Try to execute a CUDA function call only if build mode is debug or higher.
+ * @param exp expression to execute
+ **/
+#define TRY_CUDAD(exp)  PERFORMD(TRY_CUDA(exp))
+
+/**
+ * Try to execute a CUDA function call only if build mode is trace.
+ * @param exp expression to execute
+ **/
+#define TRY_CUDAT(exp)  PERFORMT(TRY_CUDA(exp))
 #endif
+#pragma endregion
 
-#ifndef TRY
-#define TRY(exp) TRY_CUDA(exp)
+
+
+
+#pragma region UNUSED
+/**
+ * Mark CUDA variable as unused.
+ */
+template <class T>
+inline void __device__ unusedCuda(T&&) {}
+
+
+#ifndef UNUSED_CUDA
+/**
+ * Mark CUDA variable as unused.
+ * @param x variable to mark as unused
+ */
+#define UNUSED_CUDA(x)  unusedCuda(x)
 #endif
+#pragma endregion
 
 
 
 
-// DEFINE
-// ------
-// Define thread, block variables.
-
+#pragma region DEFINE
 #ifndef DEFINE_CUDA
+/**
+ * Define thread, block variables for CUDA.
+ * @param t thread index
+ * @param b block index
+ * @param B block size
+ * @param G grid size
+ */
 #define DEFINE_CUDA(t, b, B, G) \
   const int t = threadIdx.x; \
   const int b = blockIdx.x; \
   const int B = blockDim.x; \
-  const int G = gridDim.x;
-#define DEFINE_CUDA2D(tx, ty, bx, by, BX, BY, GX, GY) \
+  const int G = gridDim.x; \
+  UNUSED_CUDA(t); \
+  UNUSED_CUDA(b); \
+  UNUSED_CUDA(B); \
+  UNUSED_CUDA(G)
+
+
+/**
+ * Define 2D thread, block variables for CUDA.
+ * @param tx thread x index
+ * @param ty thread y index
+ * @param bx block x index
+ * @param by block y index
+ * @param BX block x size
+ * @param BY block y size
+ * @param GX grid x size
+ * @param GY grid y size
+ */
+#define DEFINE2D_CUDA(tx, ty, bx, by, BX, BY, GX, GY) \
   const int tx = threadIdx.x; \
   const int ty = threadIdx.y; \
   const int bx = blockIdx.x; \
@@ -88,298 +328,284 @@ void tryCuda(cudaError err, const char* exp, const char* func, int line, const c
   const int BX = blockDim.x; \
   const int BY = blockDim.y; \
   const int GX = gridDim.x;  \
-  const int GY = gridDim.y;
+  const int GY = gridDim.y; \
+  UNUSED_CUDA(tx); \
+  UNUSED_CUDA(ty); \
+  UNUSED_CUDA(bx); \
+  UNUSED_CUDA(by); \
+  UNUSED_CUDA(BX); \
+  UNUSED_CUDA(BY); \
+  UNUSED_CUDA(GX); \
+  UNUSED_CUDA(GY)
 #endif
-
-#ifndef DEFINE
-#define DEFINE(t, b, B, G) \
-  DEFINE_CUDA(t, b, B, G)
-#define DEFINE2D(tx, ty, bx, by, BX, BY, GX, GY) \
-  DEFINE_CUDA2D(tx, ty, bx, by, BX, BY, GX, GY)
-#endif
+#pragma endregion
 
 
 
 
-// UNUSED
-// ------
-// Mark CUDA kernel variables as unused.
+#pragma region METHODS
+#pragma region MEASURE MEMORY USAGE
+/**
+ * Measure the GPU memory usage.
+ * @returns memory usage in gigabytes
+ */
+inline float measureMemoryUsageCu() {
+  size_t free = 0, total = 0;
+  TRY_CUDA( cudaMemGetInfo(&free, &total) );
+  return float(total - free) / (1024.0f * 1024.0f * 1024.0f);
+}
+#pragma endregion
 
+
+
+
+#pragma region ATOMIC CAS
+/**
+ * Perform an atomic compare-and-swap operation on a float value.
+ * @param address address of value
+ * @param compare expected value
+ * @param val new value
+ * @returns old value
+ */
+inline float __device__ atomicCAS(float *address, float compare, float val) {
+  int icompare = __float_as_int(compare);
+  int ival     = __float_as_int(val);
+  return __int_as_float(atomicCAS((int*) address, icompare, ival));
+}
+
+
+/**
+ * Perform an atomic compare-and-swap operation on a double value.
+ * @param address address of value
+ * @param compare expected value
+ * @param val new value
+ * @returns old value
+ */
+inline double __device__ atomicCAS(double *address, double compare, double val) {
+  using T = unsigned long long int;
+  T icompare = __double_as_longlong(compare);
+  T ival     = __double_as_longlong(val);
+  return __longlong_as_double(atomicCAS((T*) address, icompare, ival));
+}
+#pragma endregion
+
+
+
+
+#pragma region READ
+/**
+ * Read a value from global memory.
+ * @param v address of value
+ * @returns value
+ */
 template <class T>
-__device__ void unusedCuda(T&&) {}
-
-#ifndef UNUSED_CUDA
-#define UNUSED_CUDA(x) unusedCuda(x)
-#endif
-
-#ifndef UNUSED
-#define UNUSED UNUSED_CUDA
-#endif
-
-
-
-
-// REMOVE IDE SQUIGGLES
-// --------------------
-
-#ifndef __global__
-#define __global__
-#define __host__
-#define __device__
-#define __shared__
-void __syncthreads();
-#endif
-
-
-
-
-// MEASURE-DUARATION
-// -----------------
-
-float durationMillisecondsCu(const cudaEvent_t& start, const cudaEvent_t& stop) {
-  float duration = 0;
-  cudaEventElapsedTime(&duration, start, stop);
-  return duration;
+inline T readValueCu(const T *v) {
+  ASSERT(v);
+  T vH;
+  TRY_CUDA( cudaMemcpy(&vH, v, sizeof(T), cudaMemcpyDeviceToHost) );
+  return vH;
 }
 
 
-template <class F>
-float measureDurationCu(F fn, int N=1) {
-  cudaEvent_t start, stop;
-  cudaEventCreate(&start);
-  cudaEventRecord(start, 0);
-  for (int i=0; i<N; i++)
-    fn();
-  cudaEventCreate(&stop);
-  cudaEventRecord(stop, 0);
-  cudaEventSynchronize(stop);
-  return durationMillisecondsCu(start, stop)/N;
-}
-
-
-template <class F>
-float measureDurationMarkedCu(F fn, int N=1) {
-  float duration = 0;
-  for (int i=0; i<N; i++)
-    fn([&](auto fm) { duration += measureDurationCu(fm); });
-  return duration/N;
-}
-
-
-
-
-// REDUCE
-// ------
-
-template <class T=float>
-int reduceMemcpySizeCu(int N) {
-  const int B = BLOCK_DIM_RM<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_RM<T>());
-  return G;
-}
-
-template <class T=float>
-int reduceInplaceSizeCu(int N) {
-  const int B = BLOCK_DIM_RI<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_RI<T>());
-  return G;
-}
-
-template <class T=float>
-int reduceSizeCu(int N) { return reduceMemcpySizeCu<T>(N); }
-
-
-
-
-// SWAP
-// ----
-
+/**
+ * Read values from global memory.
+ * @param v address of values
+ * @param N number of values
+ * @returns values as vector
+ */
 template <class T>
-__device__ void swapCu(T& x, T& y) {
-  T t = x; x = y; y = t;
+inline vector<T> readValuesCu(const T *v, size_t N) {
+  ASSERT(v);
+  vector<T> vH(N);
+  TRY_CUDA( cudaMemcpy(vH.data(), v, N * sizeof(T), cudaMemcpyDeviceToHost) );
+  return vH;
+}
+#pragma endregion
+
+
+
+
+#pragma region SWAP
+/**
+ * Swap two values in device memory [device function].
+ * @param a first value (updated)
+ * @param b second value (updated)
+ */
+template <class T>
+inline void __device__ swapCudU(T& a, T& b) {
+  const T t = a;
+  a = b;
+  b = t;
+}
+#pragma endregion
+
+
+
+
+#pragma region CEIL DIV
+/**
+ * Get the ceiling of a division [device function].
+ * @param x the dividend
+ * @param y the divisor
+ * @returns ceil(x/y)
+ */
+template <class T>
+inline T __device__ ceilDivCud(T x, T y) {
+  ASSERT(y);
+  return (x + y-1) / y;
+}
+
+/**
+ * Get the ceiling of a division [device function].
+ * @param x the dividend
+ * @param y the divisor
+ * @returns ceil(x/y)
+ */
+template <>
+inline float __device__ ceilDivCud<float>(float x, float y) {
+  return ceil(x/y);
+}
+
+/**
+ * Get the ceiling of a division [device function].
+ * @param x the dividend
+ * @param y the divisor
+ * @returns ceil(x/y)
+ */
+template <>
+inline double __device__ ceilDivCud<double>(double x, double y) {
+  return ceil(x/y);
+}
+#pragma endregion
+
+
+
+
+#pragma region POW2
+/**
+ * Get the next power of 2 of a value [device function].
+ * @param x the value
+ * @returns next power of 2 of x
+ */
+template <class T>
+inline T __device__ nextPow2Cud(T x) {
+  return T(1) << (__clz(T()) - __clz(x));
+}
+#pragma endregion
+
+
+
+
+#pragma region COPY
+/**
+ * Copy values from one array to another [device function].
+ * @param a destination array (output)
+ * @param x source array
+ * @param N size of source array
+ * @param i start index
+ * @param DI index stride
+ */
+template <class T>
+inline void __device__ copyValuesCudW(T *a, const T *x, size_t N, size_t i, size_t DI) {
+  ASSERT(a && x && DI);
+  for (; i<N; i+=DI)
+    a[i] = x[i];
 }
 
 
-
-
-// FILL
-// ----
-
+/**
+ * Copy values from one array to another [kernel].
+ * @param a destination array (output)
+ * @param x source array
+ * @param N size of source array
+ */
 template <class T>
-__device__ void fillKernelLoop(T *a, int N, T v, int i, int DI) {
+void __global__ copyValuesCukW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  DEFINE_CUDA(t, b, B, G);
+  copyValuesCudW(a, x, N, B*b+t, G*B);
+}
+
+
+/**
+ * Copy values from one array to another.
+ * @param a destination array (output)
+ * @param x source array
+ * @param N size of source array
+ */
+template <class T>
+inline void copyValuesCuW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_MAP_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_MAP_CUDA);
+  copyValuesCukW<<<G, B>>>(a, x, N);
+}
+#pragma endregion
+
+
+
+
+#pragma region FILL
+/**
+ * Fill array with a value [device function].
+ * @param a array to fill (output)
+ * @param N size of array
+ * @param v value to fill with
+ * @param i start index
+ * @param DI index stride
+ */
+template <class T>
+inline void __device__ fillValueCudW(T *a, size_t N, T v, size_t i, size_t DI) {
+  ASSERT(a && DI);
   for (; i<N; i+=DI)
     a[i] = v;
 }
 
 
+/**
+ * Fill array with a value [kernel].
+ * @param a array to fill (output)
+ * @param N size of array
+ * @param v value to fill with
+ */
 template <class T>
-__global__ void fillKernel(T *a, int N, T v) {
-  DEFINE(t, b, B, G);
-  fillKernelLoop(a, N, v, B*b+t, G*B);
+void __global__ fillValueCukW(T *a, size_t N, T v) {
+  ASSERT(a);
+  DEFINE_CUDA(t, b, B, G);
+  fillValueCudW(a, N, v, B*b+t, G*B);
 }
 
 
+/**
+ * Fill array with a value.
+ * @param a array to fill (output)
+ * @param N size of array
+ * @param v value to fill with
+ */
 template <class T>
-__host__ __device__ void fillCu(T *a, int N, T v) {
-  const int B = BLOCK_DIM_M<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_M<T>());
-  fillKernel<<<G, B>>>(a, N, v);
+inline void fillValueCuW(T *a, size_t N, T v) {
+  ASSERT(a);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_MAP_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_MAP_CUDA);
+  fillValueCukW<<<G, B>>>(a, N, v);
 }
+#pragma endregion
 
 
 
 
-// FILL-AT
-// -------
-
+#pragma region SUM
+/**
+ * Compute the sum of values in an array, from a thread [device function].
+ * @param x array to sum
+ * @param N size of array
+ * @param i start index
+ * @param DI index stride
+ * @returns sum of values in x[i..DI..N]
+ */
 template <class T>
-__device__ void fillAtKernelLoop(T *a, T v, const int *is, int IS, int i, int DI) {
-  for (; i<IS; i+=DI)
-    a[is[i]] = v;
-}
-
-
-template <class T>
-__global__ void fillAtKernel(T *a, T v, const int *is, int IS) {
-  DEFINE(t, b, B, G);
-  fillAtKernelLoop(a, v, is, IS, B*b+t, G*B);
-}
-
-
-template <class T>
-__host__ __device__ void fillAtCu(T *a, T v, const int *is, int IS) {
-  const int B = BLOCK_DIM_M<T>();
-  const int G = min(ceilDiv(IS, B), GRID_DIM_M<T>());
-  fillAtKernel<<<G, B>>>(a, v, is, IS);
-}
-
-
-
-
-// MULTIPLY
-// --------
-
-template <class T>
-__device__ void multiplyKernelLoop(T *a, const T *x, const T *y, int N, int i, int DI) {
-  for (; i<N; i+=DI)
-    a[i] = x[i] * y[i];
-}
-
-
-template <class T>
-__global__ void multiplyKernel(T *a, const T *x, const T* y, int N) {
-  DEFINE(t, b, B, G);
-  multiplyKernelLoop(a, x, y, N, B*b+t, G*B);
-}
-
-
-template <class T>
-void multiplyCu(T *a, const T *x, const T* y, int N) {
-  const int B = BLOCK_DIM_M<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_M<T>());
-  multiplyKernel<<<G, B>>>(a, x, y, N);
-}
-
-
-
-
-// MULTIPLY-VALUE
-// --------------
-
-template <class T>
-__device__ void multiplyValueKernelLoop(T *a, const T *x, T v, int N, int i, int DI) {
-  for (; i<N; i+=DI)
-    a[i] = x[i] * v;
-}
-
-
-template <class T>
-__global__ void multiplyValueKernel(T *a, const T *x, T v, int N) {
-  DEFINE(t, b, B, G);
-  multiplyValueKernelLoop(a, x, v, N, B*b+t, G*B);
-}
-
-
-template <class T>
-void multiplyValueCu(T *a, const T *x, T v, int N) {
-  const int B = BLOCK_DIM_M<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_M<T>());
-  multiplyValueKernel<<<G, B>>>(a, x, v, N);
-}
-
-
-
-
-// MAX
-// ---
-
-template <class T>
-__device__ void maxKernelReduce(T* a, int N, int i) {
-  __syncthreads();
-  for (N=N/2; N>0; N/=2) {
-    if (i<N) a[i] = max(a[i], a[N+i]);
-    __syncthreads();
-  }
-}
-
-
-template <class T>
-__device__ T maxKernelLoop(const T *x, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    a = max(a, x[i]);
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void maxKernel(T *a, const T *x, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = maxKernelLoop(x, N, B*b+t, G*B);
-  maxKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void maxMemcpyCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  maxKernel<<<G, B>>>(a, x, N);
-}
-
-template <class T>
-void maxInplaceCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  maxKernel<<<G, B>>>(a, x, N);
-  maxKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void maxCu(T *a, const T *x, int N) {
-  maxMemcpyCu(a, x, N);
-}
-
-
-
-
-// SUM
-// ---
-
-template <class T>
-__device__ void sumKernelReduce(T* a, int N, int i) {
-  __syncthreads();
-  for (N=N/2; N>0; N/=2) {
-    if (i<N) a[i] += a[N+i];
-    __syncthreads();
-  }
-}
-
-
-template <class T>
-__device__ T sumKernelLoop(const T *x, int N, int i, int DI) {
+inline T __device__ sumValuesThreadCud(const T *x, size_t N, size_t i, size_t DI) {
+  ASSERT(x && DI);
   T a = T();
   for (; i<N; i+=DI)
     a += x[i];
@@ -387,438 +613,254 @@ __device__ T sumKernelLoop(const T *x, int N, int i, int DI) {
 }
 
 
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumKernel(T *a, const T *x, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumKernelLoop(x, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
+/**
+ * Compute the sum of values in an array, within a block [device function].
+ * @param a array to sum (updated, a[0] is the result)
+ * @param N size of array
+ * @param i thread index
+ */
+template <class T>
+inline void __device__ sumValuesBlockReduceCudU(T *a, size_t N, size_t i) {
+  ASSERT(a);
+  // Reduce values in a to a[0] in reverse binary tree fashion.
+  for (; N>1;) {
+    size_t DN = (N+1)/2;
+    if (i<N/2) a[i] += a[DN+i];
+    __syncthreads();
+    N = DN;
+  }
+}
+
+
+/**
+ * Compute the sum of values in an array [kernel].
+ * @tparam CACHE size of shared memory cache
+ * @param a partial result array (output)
+ * @param x array to sum
+ * @param N size of array to sum
+ */
+template <int CACHE=BLOCK_LIMIT_REDUCE_CUDA, class T>
+void __global__ sumValuesCukW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  DEFINE_CUDA(t, b, B, G);
+  __shared__ T cache[CACHE];
+  // Store per-thread sum in shared cache (for further reduction).
+  cache[t] = sumValuesThreadCud(x, N, B*b+t, G*B);
+  // Wait for all threads within the block to finish.
+  __syncthreads();
+  // Reduce the sum in the cache to a single value in reverse binary tree fashion.
+  sumValuesBlockReduceCudU(cache, B, t);
+  // Store this per-block sum into a partial result array.
   if (t==0) a[b] = cache[0];
 }
 
 
+/**
+ * Compute the sum of values in an array, using memcpy approach.
+ * @param a partial result array (output)
+ * @param x array to sum
+ * @param N size of array to sum
+ */
 template <class T>
-void sumMemcpyCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumKernel<<<G, B>>>(a, x, N);
-}
-
-template <class T>
-void sumInplaceCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumKernel<<<G, B>>>(a, x, N);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void sumCu(T *a, const T *x, int N) {
-  sumMemcpyCu(a, x, N);
+inline void sumValuesMemcpyCuW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  sumValuesCukW<<<G, B>>>(a, x, N);
 }
 
 
-
-
-// SUM-ABS
-// -------
-
+/**
+ * Compute the sum of values in an array, using inplace approach.
+ * @param a result array (output, a[0] is the result)
+ * @param x array to sum
+ * @param N size of array to sum
+ */
 template <class T>
-__device__ T sumAbsKernelLoop(const T *x, int N, int i, int DI) {
-  T a = T();
+inline void sumValuesInplaceCuW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  const int B = blockSizeCu(N ,  BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  sumValuesCukW<<<G, B>>>(a, x, N);
+  TRY_CUDA( cudaDeviceSynchronize() );
+  sumValuesCukW<GRID_LIMIT_REDUCE_CUDA><<<1, G>>>(a, a, G);
+}
+#pragma endregion
+
+
+
+
+#pragma region LI-NORM
+/**
+ * Compute the L∞-norm of an array, from a thread [device function].
+ * @param x array to compute on
+ * @param N size of array
+ * @param i start index
+ * @param DI index stride
+ * @returns ||x[i..DI..N]||_∞
+ */
+template <class T>
+inline T __device__ liNormThreadCud(const T *x, size_t N, size_t i, size_t DI) {
+  ASSERT(x && DI);
+  T a = T();  // TODO: use numeric_limits<T>::min()?
   for (; i<N; i+=DI)
-    a += abs(x[i]);
+    a = max(a, x[i]);
   return a;
 }
 
 
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumAbsKernel(T *a, const T *x, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumAbsKernelLoop(x, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
+/**
+ * Compute the L∞-norm of an array, within a block [device function].
+ * @param a array to compute on (updated, a[0] is the result)
+ * @param N size of array
+ * @param i thread index
+ */
+template <class T>
+inline void __device__ liNormBlockReduceCudU(T *a, size_t N, size_t i) {
+  ASSERT(a);
+  // Reduce values in a to a[0] in reverse binary tree fashion.
+  for (; N>1;) {
+    size_t DN = (N+1)/2;
+    if (i<N/2) a[i] = max(a[i], a[DN+i]);
+    __syncthreads();
+    N = DN;
+  }
+}
+
+
+/**
+ * Compute the L∞-norm of an array [kernel].
+ * @tparam CACHE size of shared memory cache
+ * @param a partial result array (output)
+ * @param x array to compute on
+ * @param N size of array to compute on
+ */
+template <int CACHE=BLOCK_LIMIT_REDUCE_CUDA, class T>
+void __global__ liNormCukW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  DEFINE_CUDA(t, b, B, G);
+  __shared__ T cache[CACHE];
+  // Store per-thread L∞-norm in shared cache (for further reduction).
+  cache[t] = liNormThreadCud(x, N, B*b+t, G*B);
+  // Wait for all threads within the block to finish.
+  __syncthreads();
+  // Reduce the L∞-norms in cache to a single value in reverse binary tree fashion.
+  liNormBlockReduceCudU(cache, B, t);
+  // Store this per-block L∞-norm into a partial result array.
   if (t==0) a[b] = cache[0];
 }
 
 
+/**
+ * Compute the L∞-norm of an array, using memcpy approach.
+ * @param a partial result array (output)
+ * @param x array to compute on
+ * @param N size of array to compute on
+ */
 template <class T>
-void sumAbsMemcpyCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumAbsKernel<<<G, B>>>(a, x, N);
+inline void liNormMemcpyCuW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  liNormCukW<<<G, B>>>(a, x, N);
 }
 
+
+/**
+ * Compute the L∞-norm of an array, using inplace approach.
+ * @param a result array (output, a[0] is the result)
+ * @param x array to compute on
+ * @param N size of array to compute on
+ */
 template <class T>
-void sumAbsInplaceCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumAbsKernel<<<G, B>>>(a, x, N);
-  sumAbsKernel<<<1, G>>>(a, a, G);
+inline void liNormInplaceCuW(T *a, const T *x, size_t N) {
+  ASSERT(a && x);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  liNormCukW<<<G, B>>>(a, x, N);
+  TRY_CUDA( cudaDeviceSynchronize() );
+  liNormCukW<GRID_LIMIT_REDUCE_CUDA><<<1, G>>>(a, a, G);
 }
+#pragma endregion
 
+
+
+
+#pragma region LI-NORM DELTA
+/**
+ * Compute L∞-norm of the difference between two arrays, from a thread [device function].
+ * @param x first array
+ * @param y second array
+ * @param N size of each array
+ * @param i start index
+ * @param DI index stride
+ * @returns ||x[i..DI..N] - y[i..DI..N]||_∞
+ */
 template <class T>
-void sumAbsCu(T *a, const T *x, int N) {
-  sumAbsMemcpyCu(a, x, N);
-}
-
-
-
-
-// SUM-SQR
-// -------
-
-template <class T>
-__device__ T sumSqrKernelLoop(const T *x, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    a += x[i]*x[i];
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumSqrKernel(T *a, const T *x, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumSqrKernelLoop(x, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void sumSqrMemcpyCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumSqrKernel<<<G, B>>>(a, x, N);
-}
-
-template <class T>
-void sumSqrInplaceCu(T *a, const T *x, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumSqrKernel<<<G, B>>>(a, x, N);
-  sumSqrKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void sumSqrCu(T *a, const T *x, int N) {
-  sumSqrMemcpyCu(a, x, N);
-}
-
-
-
-
-// SUM-AT
-// ------
-
-template <class T>
-__device__ T sumAtKernelLoop(const T *x, const int *is, int IS, int i, int DI) {
-  T a = T();
-  for (; i<IS; i+=DI)
-    a += x[is[i]];
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumAtKernel(T *a, const T *x, const T *is, int IS) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumAtKernelLoop(x, is, IS, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void sumAtMemcpyCu(T *a, const T *x, const T *is, int IS) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(IS, B), GRID_DIM_R<T>());
-  sumAtKernel<<<G, B>>>(a, x, is, IS);
-}
-
-template <class T>
-void sumAtInplaceCu(T *a, const T *x, const T *is, int IS) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(IS, B), GRID_DIM_R<T>());
-  sumAtKernel<<<G, B>>>(a, x, is, IS);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void sumAtCu(T *a, const T *x, const T *is, int IS) {
-  sumAtMemcpyCu(a, x, is, IS);
-}
-
-
-
-
-// SUM-IF-NOT
-// ----------
-
-template <class T, class C>
-__device__ T sumIfNotKernelLoop(const T *x, const C *cs, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    if (!cs[i]) a += x[i];
-  return a;
-}
-
-
-template <class T, class C, int S=BLOCK_LIMIT>
-__global__ void sumIfNotKernel(T *a, const T *x, const C *cs, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumIfNotKernelLoop(x, cs, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T, class C>
-void sumIfNotMemcpyCu(T *a, const T *x, const C *cs, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumIfNotKernel<<<G, B>>>(a, x, cs, N);
-}
-
-template <class T, class C>
-void sumIfNotInplaceCu(T *a, const T *x, const C *cs, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumIfNotKernel<<<G, B>>>(a, x, cs, N);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T, class C>
-void sumIfNotCu(T *a, const T *x, const C *cs, int N) {
-  sumIfNotMemcpyCu(a, x, cs, N);
-}
-
-
-
-
-// SUM-MULTIPLY
-// ------------
-
-template <class T>
-__device__ T sumMultiplyKernelLoop(const T *x, const T *y, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    a += x[i] * y[i];
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumMultiplyKernel(T *a, const T *x, const T *y, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumMultiplyKernelLoop(x, y, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void sumMultiplyMemcpyCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumMultiplyKernel<<<G, B>>>(a, x, y, N);
-}
-
-template <class T>
-void sumMultiplyInplaceCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  sumMultiplyKernel<<<G, B>>>(a, x, y, N);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void sumMultiplyCu(T *a, const T *x, const T *y, int N) {
-  sumMultiplyMemcpyCu(a, x, y, N);
-}
-
-
-
-
-// SUM-MULTIPLY-AT
-// ---------------
-
-template <class T>
-__device__ T sumMultiplyAtKernelLoop(const T *x, const T *y, const int *is, int IS, int i, int DI) {
-  T a = T();
-  for (; i<IS; i+=DI)
-    a += x[is[i]] * y[is[i]];
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void sumMultiplyAtKernel(T *a, const T *x, const T *y, const T *is, int IS) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = sumMultiplyAtKernelLoop(x, y, is, IS, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void sumMultiplyAtMemcpyCu(T *a, const T *x, const T *y, const T *is, int IS) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(IS, B), GRID_DIM_R<T>());
-  sumMultiplyAtKernel<<<G, B>>>(a, x, y, is, IS);
-}
-
-template <class T>
-void sumMultiplyAtInplaceCu(T *a, const T *x, const T *y, const T *is, int IS) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(IS, B), GRID_DIM_R<T>());
-  sumMultiplyAtKernel<<<G, B>>>(a, x, y, is, IS);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void sumMultiplyAtCu(T *a, const T *x, const T *y, const T *is, int IS) {
-  sumMultiplyAtMemcpyCu(a, x, y, is, IS);
-}
-
-
-
-
-// L1-NORM
-// -------
-
-template <class T>
-__device__ T l1NormKernelLoop(const T *x, const T *y, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    a += abs(x[i] - y[i]);
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void l1NormKernel(T *a, const T *x, const T *y, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = l1NormKernelLoop(x, y, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void l1NormMemcpyCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  l1NormKernel<<<G, B>>>(a, x, y, N);
-}
-
-template <class T>
-void l1NormInplaceCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  l1NormKernel<<<G, B>>>(a, x, y, N);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void l1NormCu(T *a, const T *x, const T *y, int N) {
-  l1NormMemcpyCu(a, x, y, N);
-}
-
-
-
-
-// L2-NORM
-// -------
-// Remember to sqrt the result!
-
-template <class T>
-__device__ T l2NormKernelLoop(const T *x, const T *y, int N, int i, int DI) {
-  T a = T();
-  for (; i<N; i+=DI)
-    a += (x[i] - y[i]) * (x[i] - y[i]);
-  return a;
-}
-
-
-template <class T, int S=BLOCK_LIMIT>
-__global__ void l2NormKernel(T *a, const T *x, const T *y, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = l2NormKernelLoop(x, y, N, B*b+t, G*B);
-  sumKernelReduce(cache, B, t);
-  if (t==0) a[b] = cache[0];
-}
-
-
-template <class T>
-void l2NormMemcpyCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  l2NormKernel<<<G, B>>>(a, x, y, N);
-}
-
-template <class T>
-void l2NormInplaceCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  l2NormKernel<<<G, B>>>(a, x, y, N);
-  sumKernel<<<1, G>>>(a, a, G);
-}
-
-template <class T>
-void l2NormCu(T *a, const T *x, const T *y, int N) {
-  l2NormMemcpyCu(a, x, y, N);
-}
-
-
-
-
-// LI-NORM
-// -------
-
-template <class T>
-__device__ T liNormKernelLoop(const T *x, const T *y, int N, int i, int DI) {
-  T a = T();
+inline T __device__ liNormDeltaThreadCud(const T *x, const T *y, size_t N, size_t i, size_t DI) {
+  ASSERT(x && y && DI);
+  T a = T();  // TODO: use numeric_limits<T>::min()?
   for (; i<N; i+=DI)
     a = max(a, abs(x[i] - y[i]));
   return a;
 }
 
 
-template <class T, int S=BLOCK_LIMIT>
-__global__ void liNormKernel(T *a, const T *x, const T *y, int N) {
-  DEFINE(t, b, B, G);
-  __shared__ T cache[S];
-  cache[t] = liNormKernelLoop(x, y, N, B*b+t, G*B);
-  maxKernelReduce(cache, B, t);
+/**
+ * Compute L∞-norm of the difference between two arrays [kernel].
+ * @tparam CACHE size of shared memory cache
+ * @param a partial result array (output)
+ * @param x first array
+ * @param y second array
+ * @param N size of each array
+ */
+template <int CACHE=BLOCK_LIMIT_REDUCE_CUDA, class T>
+void __global__ liNormDeltaCukW(T *a, const T *x, const T *y, size_t N) {
+  ASSERT(a && x);
+  DEFINE_CUDA(t, b, B, G);
+  __shared__ T cache[CACHE];
+  // Store per-thread delta L∞-norm in shared cache (for further reduction).
+  cache[t] = liNormDeltaThreadCud(x, y, N, B*b+t, G*B);
+  // Wait for all threads within the block to finish.
+  __syncthreads();
+  // Reduce the delta L∞-norms in cache to a single value in reverse binary tree fashion.
+  liNormBlockReduceCudU(cache, B, t);
+  // Store this per-block delta L∞-norm into a partial result array.
   if (t==0) a[b] = cache[0];
 }
 
 
+/**
+ * Compute L∞-norm of the difference between two arrays, using memcpy approach.
+ * @param a partial result array (output)
+ * @param x first array
+ * @param y second array
+ * @param N size of each array
+ */
 template <class T>
-void liNormMemcpyCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  liNormKernel<<<G, B>>>(a, x, y, N);
+inline void liNormDeltaMemcpyCuW(T *a, const T *x, const T *y, size_t N) {
+  ASSERT(a && x && y);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  liNormDeltaCukW<<<G, B>>>(a, x, y, N);
 }
 
-template <class T>
-void liNormInplaceCu(T *a, const T *x, const T *y, int N) {
-  const int B = BLOCK_DIM_R<T>();
-  const int G = min(ceilDiv(N, B), GRID_DIM_R<T>());
-  liNormKernel<<<G, B>>>(a, x, y, N);
-  maxKernel<<<1, G>>>(a, a, G);
-}
 
+/**
+ * Compute L∞-norm of the difference between two arrays, using inplace approach.
+ * @param a result array (output, a[0] is the result)
+ * @param x first array
+ * @param y second array
+ * @param N size of each array
+ */
 template <class T>
-void liNormCu(T *a, const T *x, const T *y, int N) {
-  liNormMemcpyCu(a, x, y, N);
+inline void liNormDeltaInplaceCuW(T *a, const T *x, const T *y, size_t N) {
+  ASSERT(a && x && y);
+  const int B = blockSizeCu(N,   BLOCK_LIMIT_REDUCE_CUDA);
+  const int G = gridSizeCu (N, B, GRID_LIMIT_REDUCE_CUDA);
+  liNormDeltaCukW<<<G, B>>>(a, x, y, N);
+  TRY_CUDA( cudaDeviceSynchronize() );
+  liNormCukW<GRID_LIMIT_REDUCE_CUDA><<<1, G>>>(a, a, G);
 }
+#pragma endregion
+#pragma endregion

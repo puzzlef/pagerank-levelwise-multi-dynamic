@@ -44,13 +44,13 @@ auto adjustRanks(int N, const vector<T>& r, const J& ks0, const J& ks1, T radd, 
 
 template <class G, class F>
 void changedVerticesForEach(const G& x, const G& y, F fn) {
-  for (int u : y.vertices())
+  for (int u : vertices(y))
     if (!x.hasVertex(u) || !verticesEqual(x, u, y, u)) fn(u);
 }
 
 template <class G, class H, class F>
 void changedVerticesForEach(const G& x, const H& xt, const G& y, const H& yt, F fn) {
-  for (int u : y.vertices())
+  for (int u : vertices(y))
     if (!x.hasVertex(u) || !verticesEqual(x, xt, u, y, yt, u)) fn(u);  // both ways
 }
 
@@ -111,8 +111,9 @@ template <class G, class FA>
 auto dynamicVerticesBy(const G& y, FA fa) {
   vector<int> a; unordered_set<int> aff;
   fa([&](int u) { a.push_back(u); aff.insert(u); });
-  for (int u : y.vertices())
+  y.forEachVertexKey([&](auto u) {
     if (aff.count(u)==0) a.push_back(u);
+  });
   return make_pair(a, aff.size());
 }
 
